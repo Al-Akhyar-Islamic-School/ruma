@@ -100,6 +100,7 @@ export const sesi = mysqlTable(
       .notNull()
       .references(() => users.id),
     seriId: ref("seri_id").references(() => seriRapat.id, { onDelete: "set null" }),
+    simgtkAgendaId: int("simgtk_agenda_id", { unsigned: true }),
     tipeSesi: mysqlEnum("tipe_sesi", TIPE_SESI).notNull(),
     judul: varchar("judul", { length: 255 }).notNull(),
     metadata: json("metadata").$type<SesiMetadata>().notNull(),

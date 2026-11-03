@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { type OrangGtk, PilihOrang } from "@/features/undangan/pilih-orang";
 import { ApiError, api, ok, pesanGalat } from "@/lib/api";
+import { PilihAgendaSimgtk, type AgendaPilihan } from "./pilih-agenda-simgtk";
 import { useMe } from "@/lib/auth";
 import { simpanSesiLokal } from "./db";
 import { cekDukunganRekam } from "./mime";
@@ -55,6 +56,7 @@ function FormSetup({ userId, supervisiAktif }: { userId: number; supervisiAktif:
     queryFn: async () => ok(await api.seri.$get()),
     staleTime: 60_000,
   });
+  const [agendaSimgtk, setAgendaSimgtk] = useState<AgendaPilihan | null>(null);
   const [guru, setGuru] = useState<OrangGtk | null>(null);
   const [kelas, setKelas] = useState("");
   const [mapel, setMapel] = useState("");
@@ -89,7 +91,21 @@ function FormSetup({ userId, supervisiAktif }: { userId: number; supervisiAktif:
       if (seriId !== "tanpa" && !Number.isNaN(Number(seriId))) {
         jsonPayload.seri_id = Number(seriId);
       }
+      if (agendaSimgtk) {
+        jsonPayload.simgtk_agenda_id = agendaSimgtk.id;
+      }
       const sesi = await ok(await api.sesi.$post({ json: jsonPayload }));
+
+      // Jika ada peserta dari agenda SIMGTK, undang otomatis ke sesi yang baru dibuat
+      if (agendaSimgtk?.pesertas?.length) {
+        const emails = [...new Set(agendaSimgtk.pesertas.map((p) => p.email.toLowerCase()).filter(Boolean))];
+        if (emails.length > 0) {
+          void api.sesi[":uuid"].undangan.$post({
+            param: { uuid: sesi.uuid },
+            json: { tipe: "orang", emails },
+          }).catch(() => undefined);
+        }
+      }
       // Catatan lokal dibuat sekarang agar pemulihan tahu pemilik dan MIME sesi ini. Gagal menyimpan tidak menghalangi merekam.
       await simpanSesiLokal({
         uuid: sesi.uuid,
@@ -185,6 +201,13 @@ function FormSetup({ userId, supervisiAktif }: { userId: number; supervisiAktif:
         </>
       ) : (
         <>
+          <PilihAgendaSimgtk
+            onPilih={(a) => {
+              setAgendaSimgtk(a);
+              setJudulRapat(a.judul);
+            }}
+          />
+
           <div className="space-y-2">
             <Label htmlFor="rekam-judul-rapat">Judul rapat</Label>
             <Input

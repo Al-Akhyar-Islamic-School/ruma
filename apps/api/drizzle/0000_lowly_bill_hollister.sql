@@ -128,6 +128,7 @@ CREATE TABLE `ruma_sesi` (
 	`uuid` char(36) NOT NULL,
 	`user_id` bigint unsigned NOT NULL,
 	`seri_id` bigint unsigned,
+	`simgtk_agenda_id` int unsigned,
 	`tipe_sesi` enum('rapat','supervisi_kelas') NOT NULL,
 	`judul` varchar(255) NOT NULL,
 	`metadata` json NOT NULL,

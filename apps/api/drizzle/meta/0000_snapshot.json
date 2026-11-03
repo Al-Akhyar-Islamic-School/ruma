@@ -1,7 +1,7 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "d7e1085a-c18b-4c27-ba06-069cdece188e",
+  "id": "47c8b5bf-7aae-4885-9009-34a04b9c453e",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "ruma_action_items": {
@@ -1057,6 +1057,13 @@
         "seri_id": {
           "name": "seri_id",
           "type": "bigint unsigned",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "simgtk_agenda_id": {
+          "name": "simgtk_agenda_id",
+          "type": "int unsigned",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false

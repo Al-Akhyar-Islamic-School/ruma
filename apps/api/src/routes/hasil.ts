@@ -14,6 +14,8 @@ import { emailBaku } from "../validasi.js";
 import { statusDriveUser, urlOAuthDrive } from "../integrasi/google-auth.js";
 import { eksporKeGoogleDocs, type DataNotulen } from "../integrasi/google-docs.js";
 import { daftarPesertaDariUndangan } from "../integrasi/peserta-undangan.js";
+import { kirimNotulenKeSimgtk } from "../integrasi/simgtk-agenda.js";
+import { env } from "../env.js";
 
 const uuidParam = z.object({ uuid: z.uuid() });
 const tugasParam = z.object({ uuid: z.uuid(), id: z.coerce.number().int().positive() });
@@ -220,6 +222,28 @@ export const hasilRoutes = new Hono<AuthEnv>()
           })
           .where(eq(seriRapat.id, s.seriId));
       }
+
+      // Jika sesi ditautkan ke Agenda SIMGTK, kirim balik hasil notulen & tautan docs secara otomatis (Sync-back)
+      if (s.simgtkAgendaId) {
+        const payloadData = d.payload as DataNotulen;
+        const tindakLanjutList = (payloadData.action_items || []).map((t) => ({
+          deskripsi: t.tugas,
+          detail: null,
+          penanggung_jawab_email: null,
+          tenggat: t.tenggat_waktu ?? null,
+        }));
+
+        void kirimNotulenKeSimgtk(s.simgtkAgendaId, {
+          email: user.email,
+          ringkasan: payloadData.ringkasan_eksekutif || s.judul,
+          ruma_session_url: `${env.APP_URL}/sesi/${s.uuid}`,
+          google_docs_url: hasil.url,
+          tindak_lanjut: tindakLanjutList,
+        }).catch((err) => {
+          console.error(`Sync-back SIMGTK agenda ${s.simgtkAgendaId} gagal:`, err);
+        });
+      }
+
 
       return c.json({ ok: true, url: hasil.url });
     } catch (e) {

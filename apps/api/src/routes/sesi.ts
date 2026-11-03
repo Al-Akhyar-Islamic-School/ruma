@@ -103,6 +103,7 @@ export const sesiRoutes = new Hono<AuthEnv>()
       uuid,
       userId: user.id,
       seriId: b.seri_id ?? null,
+      simgtkAgendaId: b.simgtk_agenda_id ?? null,
       tipeSesi: b.tipe_sesi,
       judul: b.judul,
       audioMime: b.audio_mime,

@@ -11,6 +11,7 @@ import { kategoriRoutes } from "./routes/kategori.js";
 import { gtkRoutes } from "./routes/gtk.js";
 import { pengetahuanRoutes } from "./routes/pengetahuan.js";
 import { seriRapatRoutes } from "./routes/seri.js";
+import { simgtkAgendaRoutes } from "./routes/simgtk-agenda.js";
 
 export const app = new Hono()
   .use(cors({ origin: env.APP_URL, credentials: true }))
@@ -39,6 +40,7 @@ export const app = new Hono()
   .route("/gtk", gtkRoutes)
   .route("/pengetahuan", pengetahuanRoutes)
   .route("/seri", seriRapatRoutes)
+  .route("/simgtk/agenda", simgtkAgendaRoutes)
   .route("/admin", admin);
 
 export type AppType = typeof app;

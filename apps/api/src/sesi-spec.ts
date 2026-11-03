@@ -7,6 +7,7 @@ export const sesiSpecShape = {
   tipe_sesi: z.enum(TIPE_SESI),
   judul: z.string().trim().min(1).max(255),
   seri_id: z.number().int().positive().nullish(),
+  simgtk_agenda_id: z.number().int().positive().nullish(),
   metadata: z
     .object({
       // Kode `ruma_kategori_rapat`; keberadaan dan status aktifnya dicek di rute (butuh database).
