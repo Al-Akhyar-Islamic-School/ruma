@@ -10,7 +10,7 @@ export function KerangkaGelap({ children }: { children: ReactNode }) {
       role="dialog"
       aria-modal="true"
       aria-label="Perekam suara"
-      className="dark fixed inset-0 z-50 flex flex-col overflow-y-auto overscroll-none bg-slate-950 pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] text-slate-50"
+      className="dark fixed inset-0 z-50 flex flex-col overflow-y-auto overscroll-none bg-background pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] text-foreground"
     >
       {children}
     </div>

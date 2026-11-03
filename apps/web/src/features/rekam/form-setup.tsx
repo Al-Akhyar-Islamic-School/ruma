@@ -219,7 +219,7 @@ function FormSetup({ userId, supervisiAktif }: { userId: number; supervisiAktif:
       <div className="fixed inset-x-0 bottom-0 z-20 border-t bg-background/95 px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur">
         <div className="mx-auto max-w-3xl space-y-2">
           {kurang.length > 0 && <p className="text-center text-xs text-muted-foreground">Lengkapi {kurang.join(", ")} dulu.</p>}
-          <Button type="submit" form="form-setup" variant="record" size="lg" className="h-14 w-full" disabled={!dukungan.ok || kurang.length > 0 || mulai.isPending}>
+          <Button type="submit" form="form-setup" variant="default" size="lg" className="h-14 w-full" disabled={!dukungan.ok || kurang.length > 0 || mulai.isPending}>
             {mulai.isPending ? <LoaderCircleIcon className="animate-spin" aria-hidden /> : <MicIcon aria-hidden />}
             {mulai.isPending ? "Menyiapkan sesi…" : "Mulai merekam"}
           </Button>

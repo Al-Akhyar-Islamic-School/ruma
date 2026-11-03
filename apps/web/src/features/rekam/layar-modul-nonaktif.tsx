@@ -39,12 +39,12 @@ export function LayarModulNonaktif({
   return (
     <KerangkaGelap>
       <main className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
-        <ArchiveIcon className="size-10 text-amber-400" aria-hidden />
+        <ArchiveIcon className="size-10 text-warning" aria-hidden />
         <div className="space-y-1">
           <h1 className="text-xl font-semibold">Rekaman belum selesai</h1>
-          <p className="line-clamp-2 text-sm text-slate-400">{lokal.judul}</p>
+          <p className="line-clamp-2 text-sm text-muted-foreground">{lokal.judul}</p>
         </div>
-        <p className="max-w-sm text-sm text-slate-300">
+        <p className="max-w-sm text-sm text-muted-foreground">
           {modulAktif
             ? "Sesi supervisi ini tidak ditemukan di server, jadi rekaman belum bisa dikirim."
             : "Modul supervisi sedang dinonaktifkan admin, sehingga rekaman ini belum bisa dikirim."}{" "}

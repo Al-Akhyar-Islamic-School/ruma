@@ -67,8 +67,8 @@ export function LayarLive({ uuid }: { uuid: string }) {
     return (
       <KerangkaGelap>
         <main role="status" className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
-          <LoaderCircleIcon className="size-10 animate-spin text-sky-400" aria-hidden />
-          <p className="text-sm text-slate-300">Menyiapkan perekam…</p>
+          <LoaderCircleIcon className="size-10 animate-spin text-primary" aria-hidden />
+          <p className="text-sm text-muted-foreground">Menyiapkan perekam…</p>
         </main>
       </KerangkaGelap>
     );

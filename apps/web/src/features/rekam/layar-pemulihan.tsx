@@ -97,8 +97,8 @@ export function LayarPemulihan({
     return (
       <KerangkaGelap>
         <main role="status" className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
-          <LoaderCircleIcon className="size-10 animate-spin text-sky-400" aria-hidden />
-          <p className="text-sm text-slate-300">Memeriksa rekaman di perangkat…</p>
+          <LoaderCircleIcon className="size-10 animate-spin text-primary" aria-hidden />
+          <p className="text-sm text-muted-foreground">Memeriksa rekaman di perangkat…</p>
         </main>
       </KerangkaGelap>
     );
@@ -108,9 +108,9 @@ export function LayarPemulihan({
   return (
     <KerangkaGelap>
       <main className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
-        <TriangleAlertIcon className="size-10 text-amber-400" aria-hidden />
+        <TriangleAlertIcon className="size-10 text-warning" aria-hidden />
         <h1 className="text-xl font-semibold">{galatBaca ? "Rekaman di perangkat tidak terbaca" : "Tidak ada potongan yang bisa dikirim"}</h1>
-        <p className="max-w-sm text-sm text-slate-300">
+        <p className="max-w-sm text-sm text-muted-foreground">
           {galatBaca
             ? "Penyimpanan perangkat tidak bisa dibuka. Muat ulang halaman ini; bila terus berulang, rekaman tidak bisa dipulihkan dari perangkat ini."
             : "Potongan awal rekaman tidak ada di perangkat maupun di server, jadi rekaman ini tidak bisa diselesaikan."}

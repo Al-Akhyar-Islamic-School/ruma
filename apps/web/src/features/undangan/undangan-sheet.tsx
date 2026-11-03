@@ -256,7 +256,7 @@ export function UndanganSheet({
                   <TabsTrigger
                     key={m}
                     value={m}
-                    className="h-10 rounded-xl text-sm font-semibold data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm"
+                    className="h-10 rounded-xl text-sm font-semibold data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-sm"
                   >
                     {LABEL_MODE[m]}
                   </TabsTrigger>

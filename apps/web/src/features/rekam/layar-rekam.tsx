@@ -209,12 +209,12 @@ export function LayarRekam({ uuid, userId, judul, tipeSesi, subjudul, maksDurasi
     return (
       <KerangkaGelap>
         <main className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
-          <TriangleAlertIcon className="size-10 text-amber-400" aria-hidden />
+          <TriangleAlertIcon className="size-10 text-warning" aria-hidden />
           <h1 className="text-xl font-semibold">Belum ada audio yang tersimpan</h1>
-          <p className="max-w-sm text-sm text-slate-300">Rekaman terlalu singkat atau mikrofon tidak menangkap suara, jadi tidak ada yang bisa dikirim.</p>
+          <p className="max-w-sm text-sm text-muted-foreground">Rekaman terlalu singkat atau mikrofon tidak menangkap suara, jadi tidak ada yang bisa dikirim.</p>
         </main>
         <footer className="space-y-3 px-4 pt-3 pb-4">
-          <Button size="lg" variant="record" className="h-14 w-full" onClick={rekamLagi}>
+          <Button size="lg" variant="default" className="h-14 w-full" onClick={rekamLagi}>
             Rekam lagi
           </Button>
           <Button size="lg" variant="secondary" className="h-14 w-full" onClick={() => void navigate({ to: "/" })}>
@@ -234,61 +234,61 @@ export function LayarRekam({ uuid, userId, judul, tipeSesi, subjudul, maksDurasi
   return (
     <KerangkaGelap>
       <header className="flex items-center justify-between px-3 pt-2">
-        <Button type="button" variant="ghost" size="icon" aria-label="Batalkan rekaman" onClick={ketukBatal} disabled={menutup} className="text-slate-300 hover:bg-slate-800 hover:text-slate-50">
+        <Button type="button" variant="ghost" size="icon" aria-label="Batalkan rekaman" onClick={ketukBatal} disabled={menutup} className="text-muted-foreground hover:bg-muted hover:text-foreground">
           <XIcon aria-hidden />
         </Button>
-        <p className="text-sm font-medium text-slate-300">{tipeSesi === "supervisi_kelas" ? "Mode: Supervisi kelas" : "Mode: Rapat"}</p>
+        <p className="text-sm font-medium text-muted-foreground">{tipeSesi === "supervisi_kelas" ? "Mode: Supervisi kelas" : "Mode: Rapat"}</p>
         <span className="size-12" aria-hidden />
       </header>
 
       <main className="flex flex-1 flex-col items-center justify-center gap-4 px-5 py-4 text-center">
         <div className="space-y-1">
           <h1 className="line-clamp-2 text-xl leading-snug font-semibold">{judul}</h1>
-          {subjudul && <p className="text-sm text-slate-400">{subjudul}</p>}
+          {subjudul && <p className="text-sm text-muted-foreground">{subjudul}</p>}
         </div>
 
-        <p className={cn("font-mono text-6xl font-semibold tracking-tight tabular-nums", fase === "dijeda" || siap ? "text-slate-400" : "text-slate-50")}>
+        <p className={cn("font-mono text-6xl font-semibold tracking-tight tabular-nums", fase === "dijeda" || siap ? "text-muted-foreground" : "text-foreground")}>
           {formatTimer(perekam.detik)}
         </p>
 
-        <p role="status" className="flex items-center gap-2 text-sm font-semibold tracking-wide text-slate-200 uppercase">
+        <p role="status" className="flex items-center gap-2 text-sm font-semibold tracking-wide text-foreground uppercase">
           <span
             aria-hidden
-            className={cn("size-2.5 rounded-full", fase === "merekam" && !menutup ? "animate-pulse bg-rose-500" : fase === "dijeda" || fase === "terhenti" ? "bg-amber-400" : "bg-slate-500")}
+            className={cn("size-2.5 rounded-full", fase === "merekam" && !menutup ? "animate-pulse bg-record" : fase === "dijeda" || fase === "terhenti" ? "bg-warning" : "bg-muted-foreground")}
           />
           {label}
         </p>
 
         {sisa !== null && !menutup && (
-          <p className={cn("rounded-full bg-slate-900 px-3 py-1 text-xs font-medium ring-1 ring-slate-800", sisa <= 60 ? "text-rose-300" : sisa <= 300 ? "text-amber-300" : "text-slate-300")}>
+          <p className={cn("rounded-full bg-card px-3 py-1 text-xs font-medium ring-1 ring-border", sisa <= 60 ? "text-destructive" : sisa <= 300 ? "text-warning" : "text-muted-foreground")}>
             {siap ? "Batas rekaman" : "Sisa waktu"} <span className="font-mono tabular-nums">{formatTimer(siap ? (maksDurasiDetik ?? 0) : sisa)}</span>
           </p>
         )}
 
         <Waveform analyser={perekam.analyser} aktif={fase === "merekam"} className="h-24 w-full max-w-md" />
 
-        <p aria-live="polite" className="flex items-center gap-1.5 text-sm text-slate-300">
-          <FlagIcon className="size-4 text-amber-400" aria-hidden />
+        <p aria-live="polite" className="flex items-center gap-1.5 text-sm text-muted-foreground">
+          <FlagIcon className="size-4 text-lime" aria-hidden />
           {penanda.length} momen penting ditandai
         </p>
 
         {!dukungan.ok && (
-          <p role="alert" className="max-w-sm rounded-xl bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
+          <p role="alert" className="max-w-sm rounded-xl bg-destructive/10 px-3 py-2 text-sm text-destructive">
             {dukungan.pesan}
           </p>
         )}
         {perekam.galat && (
-          <p role="alert" className="max-w-sm rounded-xl bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
+          <p role="alert" className="max-w-sm rounded-xl bg-destructive/10 px-3 py-2 text-sm text-destructive">
             {perekam.galat}
           </p>
         )}
         {fase === "terhenti" && (
-          <p role="alert" className="max-w-sm rounded-xl bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
+          <p role="alert" className="max-w-sm rounded-xl bg-warning/10 px-3 py-2 text-sm text-foreground">
             Perangkat menghentikan rekaman (mis. ada telepon masuk atau mikrofon terlepas). Potongan yang sudah ada aman di perangkat. Ketuk Selesaikan dan kirim.
           </p>
         )}
         {snap.galat && (
-          <p role="alert" className="max-w-sm rounded-xl bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
+          <p role="alert" className="max-w-sm rounded-xl bg-warning/10 px-3 py-2 text-sm text-foreground">
             {snap.galat.kode === "tidak_ditemukan" && tipeSesi === "supervisi_kelas"
               ? "Server tidak menemukan sesi supervisi ini; modul supervisi mungkin dinonaktifkan admin."
               : snap.galat.pesan}{" "}
@@ -313,16 +313,16 @@ export function LayarRekam({ uuid, userId, judul, tipeSesi, subjudul, maksDurasi
           <div className="flex flex-col items-center gap-2 pt-1">
             <Button
               type="button"
-              variant="record"
+              variant="default"
               aria-label="Mulai merekam"
               disabled={!dukungan.ok || fase === "meminta-izin"}
               onClick={mulaiRekam}
-              className="size-[72px] rounded-full shadow-lg shadow-rose-500/30 [&_svg:not([class*='size-'])]:size-8"
+              className="size-[72px] rounded-full shadow-lg shadow-primary/30 [&_svg:not([class*='size-'])]:size-8"
             >
               <MicIcon aria-hidden />
             </Button>
             <p className="text-sm font-semibold">{fase === "meminta-izin" ? "Menunggu izin mikrofon…" : "Mulai merekam"}</p>
-            <p className="text-center text-xs text-slate-400">Peramban akan meminta izin mikrofon saat Anda mengetuk tombol ini.</p>
+            <p className="text-center text-xs text-muted-foreground">Peramban akan meminta izin mikrofon saat Anda mengetuk tombol ini.</p>
           </div>
         ) : (
           <>
@@ -332,7 +332,7 @@ export function LayarRekam({ uuid, userId, judul, tipeSesi, subjudul, maksDurasi
                 size="lg"
                 disabled={menutup || fase === "terhenti"}
                 onClick={fase === "dijeda" ? perekam.lanjut : perekam.jeda}
-                className="h-16 flex-col gap-1 bg-slate-800 text-slate-50 hover:bg-slate-700"
+                className="h-16 flex-col gap-1 bg-muted text-foreground hover:bg-muted/70"
               >
                 {fase === "dijeda" ? <PlayIcon aria-hidden /> : <PauseIcon aria-hidden />}
                 <span className="text-sm">{fase === "dijeda" ? "Lanjut" : "Jeda"}</span>
@@ -342,7 +342,7 @@ export function LayarRekam({ uuid, userId, judul, tipeSesi, subjudul, maksDurasi
                 size="lg"
                 disabled={menutup || fase === "terhenti"}
                 onClick={tandai}
-                className="h-16 flex-col gap-1 bg-amber-500/15 text-amber-200 hover:bg-amber-500/25"
+                className="h-16 flex-col gap-1 bg-lime/15 text-lime hover:bg-lime/25"
               >
                 <FlagIcon aria-hidden />
                 <span className="text-sm">Tandai</span>
@@ -361,7 +361,7 @@ export function LayarRekam({ uuid, userId, judul, tipeSesi, subjudul, maksDurasi
             <span className="sr-only" role="status">
               {menungguKonfirmasi ? "Ketuk Selesai sekali lagi dalam 3 detik untuk menyelesaikan rekaman." : ""}
             </span>
-            <p className="mt-3 flex items-center justify-center gap-1.5 text-xs text-slate-400">
+            <p className="mt-3 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
               <SunIcon className="size-3.5" aria-hidden />
               {layarMenyala ? "Layar tetap menyala" : "Layar bisa mati sendiri. Jangan kunci layar saat merekam."}
             </p>

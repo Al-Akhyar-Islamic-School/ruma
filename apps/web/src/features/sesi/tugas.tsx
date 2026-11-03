@@ -22,7 +22,7 @@ export type ItemTugas = {
 
 const STATUS = {
   pending: { label: "Belum dikerjakan", Ikon: CircleIcon, kelas: "text-muted-foreground" },
-  proses: { label: "Sedang dikerjakan", Ikon: CircleDashedIcon, kelas: "text-warning" },
+  proses: { label: "Sedang dikerjakan", Ikon: CircleDashedIcon, kelas: "text-warning-strong" },
   selesai: { label: "Selesai", Ikon: CircleCheckIcon, kelas: "text-success" },
 } as const;
 

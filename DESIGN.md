@@ -168,28 +168,41 @@ Rasio dihitung dari nilai HEX di atas. Ambang AA: **4,5:1** untuk teks biasa, **
 | Dark: Danger / Surface | **3,87** (4,25 di atas Background) | **gagal untuk teks kecil** |
 | Border / Background (light 1,14; dark 1,52) | | dekoratif; jangan menjadi satu-satunya penanda batas kontrol input |
 
-**Aturan yang berlaku dari pengukuran ini (tanpa mengubah palet):**
+**Aturan yang berlaku dari pengukuran ini:**
 
-1. Warning **bukan warna teks atau ikon kecil** di atas putih. Pakai sebagai latar/penanda dengan teks Text Primary di atasnya.
-2. Teks kecil di atas Surface Subtle memakai Text Primary, bukan Text Secondary.
-3. Danger dan Success pada dark theme hanya untuk ikon, dot, dan latar. Teks statusnya tetap Text Primary dengan ikon berwarna.
-4. Teks putih pada tombol Danger/Stop harus berukuran besar atau tebal (≥ 18,66 px tebal), atau memakai usulan di 2.9.
+1. Warning **bukan warna teks atau ikon kecil** di atas terang. Pakai sebagai latar/penanda dengan teks Text Primary di atasnya; untuk teks atau ikon peringatan di atas terang pakai `warning-strong` (2.9).
+2. Teks kecil di atas Surface Subtle memakai Text Primary atau Text Secondary alternatif (2.9), bukan `#68766E`.
+3. Teks status Danger/Success di dark theme memakai varian dark (2.9). Dengan nilai palet asli keduanya hanya boleh untuk ikon, dot, dan latar.
+4. Teks putih pada tombol Danger/Stop di light theme memakai `danger-strong` (2.9). Dengan `#D34C4C` teks harus berukuran besar atau tebal (≥ 18,66 px tebal).
+5. Batas kontrol input (bukan sekadar pemisah) harus ≥ 3:1 terhadap permukaan (WCAG 1.4.11): lihat `--input` di 2.9. Token Border tetap untuk pemisah dekoratif.
 
-### 2.9 Usulan penyesuaian token (belum disetujui)
+### 2.9 Penyesuaian token turunan (diterapkan di aplikasi)
 
-Nilai palet brand di atas **tidak diubah**. Bila ingin teks status kecil lulus AA tanpa mengorbankan identitas, tambahkan token turunan berikut (rasio terukur):
+Nilai palet brand di atas **tidak diubah** (Primary, Primary Hover, Secondary, Accent, Background, Surface, Surface Subtle, Border, Text Primary, Success, Warning, serta seluruh palet dark). Agar teks dan kontrol kecil lulus AA, aplikasi memakai token turunan berikut (rasio terukur):
 
-| Token usulan | HEX | Dipakai untuk | Rasio |
-|---|---|---|---|
-| `--color-danger-strong` (light) | `#C23F3F` | teks dan tombol Danger/Stop dengan teks putih | 5,15 di atas putih |
-| `--color-warning-strong` (light) | `#8F5F0C` | teks peringatan di atas Surface/Surface Subtle | 5,51 / 4,96 |
-| `--color-text-secondary` (light, alternatif) | `#5F6D65` | menggantikan `#68766E` bila perlu lulus di atas Surface Subtle | 4,90 |
-| `--color-danger` (dark) | `#E5706F` | teks/ikon Danger di dark theme | 5,42 di atas Surface |
-| `--color-success` (dark) | `#3FB488` | teks/ikon Success di dark theme | 6,38 di atas Surface |
+| Token | Light | Dark | Dipakai untuk | Rasio |
+|---|---|---|---|---|
+| Danger (`--destructive`, `--record`) | `#C23F3F` | `#E5706F` | teks dan tombol Danger/Stop, dot merekam, waveform | 5,15 dengan teks putih / 5,42 di atas Surface |
+| `--success` | `#16845B` (asli) | `#3FB488` | teks, ikon, badge Success | 4,68 / 6,38 |
+| `--warning-strong` | `#8F5F0C` | `#C58A2A` | teks dan ikon peringatan (Warning asli tetap untuk latar/badge) | 5,51 / 5,55 |
+| `--muted-foreground` (Text Secondary) | `#5F6D65` | `#A3B1A7` (asli) | metadata dan teks pendukung | 5,14 di atas Background, 4,90 di atas Surface Subtle |
+| `--input` (batas kontrol) | `#7F9086` | `#5F7566` | border input, select, dan area ketik | 3,37 / 3,33 di atas Surface |
+| `--accent` (chip ikon, hover lembut) | `#E4EEE8` | `#26382D` | latar chip ikon dan hover; `--accent-foreground` = Primary / `#DDE9E0` | tinggi (> 10) |
 
-### 2.10 Status implementasi
+### 2.10 Pemetaan token dan status implementasi
 
-Dokumen ini adalah acuan baru. **Aplikasi (`apps/web`) belum memakai palet ini**: `apps/web/src/index.css` masih memetakan token shadcn ke palet lama (`sky-600` untuk primary, `rose-500` untuk record, `emerald-600` untuk success, `amber-500` untuk warning, `slate-950` untuk dark), dan `theme_color` PWA serta ikon aplikasi masih biru. Migrasi cukup dilakukan di satu tempat (token di `index.css`, `theme_color`, ikon), mengikuti aturan "satu sumber kebenaran" pada 2.6.
+**Diterapkan** di `apps/web/src/index.css` (satu-satunya sumber warna), `index.html` (`theme-color` terang/gelap dan `<body>` memakai token), manifest PWA (`theme_color` `#153E35`, `background_color` `#F7F9F7`), dan ikon aplikasi (`icon.svg`, tiga PNG; latar Primary, batang putih, batang tengah Lime). Komponen tidak lagi memakai kelas warna Tailwind langsung; waveform membaca `--record` dan `--muted-foreground` dari CSS.
+
+| Nama di dokumen | Variabel / kelas di aplikasi | Catatan |
+|---|---|---|
+| Background, Surface, Surface Subtle | `--background`, `--card`, `--muted` (= `--secondary`) | Surface Elevated dark = `--popover` |
+| Text Primary, Text Secondary | `--foreground`, `--muted-foreground` | |
+| Primary, Primary Hover | `--primary`, `--primary-hover` | tombol default memakai `hover:bg-primary-hover` |
+| Secondary (hijau `#267653`) | `--brand-secondary` | bukan `--secondary` (itu permukaan netral shadcn) |
+| Accent / Lime | `--lime`, `--lime-foreground` | penanda momen; bukan `--accent` |
+| Success, Warning, Danger | `--success`, `--warning`, `--destructive` (= `--record`) | nilai Danger sesuai 2.9 |
+
+Aturan tombol: Mulai Rekam memakai Primary; varian `record` (Danger) hanya untuk Stop/Selesai.
 
 ---
 

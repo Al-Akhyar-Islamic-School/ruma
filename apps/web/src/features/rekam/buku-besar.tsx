@@ -6,10 +6,10 @@ import type { HitunganPotongan, StatusPotongan } from "./unggah";
 type Sel = "direkam" | StatusPotongan;
 
 const WARNA_SEL: Record<Sel, string> = {
-  direkam: "bg-rose-500",
-  tersimpan: "bg-sky-500",
-  terunggah: "bg-emerald-500",
-  gagal: "bg-amber-500",
+  direkam: "bg-record",
+  tersimpan: "bg-brand-secondary",
+  terunggah: "bg-success",
+  gagal: "bg-warning",
 };
 
 const LEGENDA: { sel: Sel; label: string }[] = [
@@ -56,7 +56,7 @@ export function BukuBesar({
       : `${hitungan.tersimpan} potongan tersimpan · ${hitungan.terunggah} terunggah${hitungan.gagal > 0 ? ` · ${hitungan.gagal} menunggu kirim ulang` : ""}`;
 
   return (
-    <section aria-label="Buku besar potongan rekaman" className="space-y-2.5 rounded-2xl bg-slate-900 p-3.5 ring-1 ring-slate-800">
+    <section aria-label="Buku besar potongan rekaman" className="space-y-2.5 rounded-2xl bg-card p-3.5 ring-1 ring-border">
       <div ref={gulir} className="flex max-h-[4.25rem] min-h-3 flex-wrap content-start gap-1 overflow-y-auto" aria-hidden>
         {Array.from({ length: jumlahSel }, (_, seq) => {
           const status: Sel = potongan.get(seq) ?? "tersimpan";
@@ -65,19 +65,19 @@ export function BukuBesar({
         {sedangRekam && <span title={`Potongan ${jumlahSel + 1} sedang direkam`} className={cn("size-3 rounded-[4px]", WARNA_SEL.direkam, berdenyut && "animate-pulse")} />}
       </div>
 
-      <p aria-live="polite" className="text-sm text-slate-200">
+      <p aria-live="polite" className="text-sm text-foreground">
         {ringkasan}
       </p>
 
       {penyimpananBermasalah && (
-        <p className="flex items-start gap-1.5 text-xs text-amber-300">
-          <TriangleAlertIcon className="mt-px size-3.5 shrink-0" aria-hidden />
+        <p className="flex items-start gap-1.5 text-xs text-foreground">
+          <TriangleAlertIcon className="mt-px size-3.5 shrink-0 text-warning" aria-hidden />
           Penyimpanan perangkat bermasalah. Potongan dikirim langsung ke server; jangan tutup halaman ini.
         </p>
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
-        <ul className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-slate-400">
+        <ul className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
           {LEGENDA.map((l) => (
             <li key={l.sel} className="flex items-center gap-1">
               <span className={cn("size-2 rounded-[3px]", WARNA_SEL[l.sel])} aria-hidden />
@@ -85,7 +85,7 @@ export function BukuBesar({
             </li>
           ))}
         </ul>
-        <p aria-live="polite" className={cn("flex items-center gap-1 text-xs font-medium", online ? "text-emerald-400" : "text-amber-300")}>
+        <p aria-live="polite" className={cn("flex items-center gap-1 text-xs font-medium", online ? "text-success" : "text-warning")}>
           {online ? <WifiIcon className="size-3.5" aria-hidden /> : <WifiOffIcon className="size-3.5" aria-hidden />}
           {online ? "Online" : "Offline: potongan ditahan di perangkat"}
         </p>

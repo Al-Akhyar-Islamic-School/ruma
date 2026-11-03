@@ -99,7 +99,7 @@ function ProgresTranskripsi({ selesai, total }: { selesai: number; total: number
 function Peringatan({ judul, children }: { judul: string; children: ReactNode }) {
   return (
     <Alert className="rounded-2xl border-warning/50 bg-warning/10 p-3">
-      <TriangleAlertIcon className="text-warning" />
+      <TriangleAlertIcon className="text-warning-strong" />
       <AlertTitle>{judul}</AlertTitle>
       <AlertDescription className="space-y-2 text-foreground/90">{children}</AlertDescription>
     </Alert>

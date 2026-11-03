@@ -146,7 +146,7 @@ function MenuSamping({ open, onClose, me }: { open: boolean; onClose: () => void
               <ToggleGroupItem
                 key={value}
                 value={value}
-                className="h-11 gap-1.5 rounded-xl text-xs font-semibold data-[state=on]:bg-background data-[state=on]:text-primary data-[state=on]:shadow-sm"
+                className="h-11 gap-1.5 rounded-xl text-xs font-semibold data-[state=on]:bg-card data-[state=on]:text-primary data-[state=on]:shadow-sm"
               >
                 <Ikon className="size-4" aria-hidden />
                 {label}

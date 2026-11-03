@@ -128,21 +128,21 @@ export function PanelKirim({
     keBeranda();
   };
 
-  let ikon = <LoaderCircleIcon className="size-10 animate-spin text-sky-400" aria-hidden />;
+  let ikon = <LoaderCircleIcon className="size-10 animate-spin text-primary" aria-hidden />;
   let judulFase = "Mengirim rekaman";
   let teks = `Mengunggah ${terunggah} dari ${rencana.jumlahChunk} potongan`;
   if (galat) {
-    ikon = <TriangleAlertIcon className="size-10 text-amber-400" aria-hidden />;
+    ikon = <TriangleAlertIcon className="size-10 text-warning" aria-hidden />;
     judulFase = "Rekaman belum terkirim";
     teks = supervisiMati
       ? "Modul supervisi sedang dinonaktifkan admin, sehingga rekaman ini belum bisa dikirim. Rekaman tetap aman di perangkat dan bisa dikirim setelah modul dinyalakan lagi."
       : galat.pesan;
   } else if (!snap.online) {
-    ikon = <CloudOffIcon className="size-10 text-amber-400" aria-hidden />;
+    ikon = <CloudOffIcon className="size-10 text-warning" aria-hidden />;
     judulFase = "Menunggu koneksi";
     teks = "Rekaman aman di perangkat. Akan dikirim otomatis saat Anda online.";
   } else if (tahap === "mengirim") {
-    ikon = <CloudUploadIcon className="size-10 text-sky-400" aria-hidden />;
+    ikon = <CloudUploadIcon className="size-10 text-primary" aria-hidden />;
     teks = "Menyelesaikan rekaman…";
   } else if (tahap === "mencoba-lagi") {
     teks = "Server belum bisa dihubungi. Mencoba lagi sebentar lagi…";
@@ -154,10 +154,10 @@ export function PanelKirim({
         {ikon}
         <div className="space-y-1">
           <h1 className="text-xl font-semibold">{judulFase}</h1>
-          <p className="line-clamp-2 text-sm text-slate-400">{judul}</p>
+          <p className="line-clamp-2 text-sm text-muted-foreground">{judul}</p>
         </div>
         {!galat && <Progress value={persen} aria-label="Kemajuan unggah" className="h-2 max-w-xs" />}
-        <p role="status" aria-live="polite" className="max-w-sm text-sm text-slate-300">
+        <p role="status" aria-live="polite" className="max-w-sm text-sm text-muted-foreground">
           {teks}
         </p>
       </main>
@@ -181,7 +181,7 @@ export function PanelKirim({
         <Button size="lg" variant="secondary" className="h-14 w-full" onClick={keBeranda}>
           {galat ? "Kembali ke beranda" : "Kirim nanti dari beranda"}
         </Button>
-        {!galat && <p className="text-center text-xs text-slate-400">Rekaman tersimpan di perangkat sampai server menerimanya.</p>}
+        {!galat && <p className="text-center text-xs text-muted-foreground">Rekaman tersimpan di perangkat sampai server menerimanya.</p>}
       </footer>
 
       <DialogKonfirmasi

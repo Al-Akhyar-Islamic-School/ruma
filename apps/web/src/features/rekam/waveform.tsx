@@ -4,8 +4,9 @@ const LEBAR_BAR = 3;
 const JARAK_BAR = 3;
 /** Satu bar baru tiap 70 ms; bar bergeser mulus di antara dua bar, bukan melompat. */
 const INTERVAL_BAR_MS = 70;
-const ROSE_500 = "#f43f5e";
-const SLATE_700 = "#334155";
+/** Cadangan bila token tema tidak terbaca (nilai mode gelap: --record dan --muted-foreground). */
+const FALLBACK_AKTIF = "#E5706F";
+const FALLBACK_DIAM = "#A3B1A7";
 
 /**
  * Waveform langsung: riwayat tingkat suara (RMS) yang bergulir ke kiri, dihaluskan agar tidak berkedip.
@@ -31,6 +32,8 @@ export function Waveform({ analyser, aktif, className }: { analyser: AnalyserNod
     let lebar = 0;
     let tinggi = 0;
     let frame = 0;
+    let warnaAktif = FALLBACK_AKTIF;
+    let warnaDiam = FALLBACK_DIAM;
 
     const ukur = () => {
       const dpr = window.devicePixelRatio || 1;
@@ -40,6 +43,10 @@ export function Waveform({ analyser, aktif, className }: { analyser: AnalyserNod
       el.width = Math.max(1, Math.round(lebar * dpr));
       el.height = Math.max(1, Math.round(tinggi * dpr));
       g.setTransform(dpr, 0, 0, dpr, 0, 0);
+      // Canvas tidak bisa memakai kelas Tailwind: baca token tema saat mengukur, bukan tiap frame.
+      const gaya = getComputedStyle(el);
+      warnaAktif = gaya.getPropertyValue("--record").trim() || FALLBACK_AKTIF;
+      warnaDiam = gaya.getPropertyValue("--muted-foreground").trim() || FALLBACK_DIAM;
     };
     const pengamat = new ResizeObserver(ukur);
     pengamat.observe(el);
@@ -76,11 +83,13 @@ export function Waveform({ analyser, aktif, className }: { analyser: AnalyserNod
       const n = riwayat.length;
       const tengah = tinggi / 2;
       if (n === 0) {
-        g.fillStyle = SLATE_700;
+        g.fillStyle = warnaDiam;
+        g.globalAlpha = 0.6;
         for (let x = LEBAR_BAR; x < lebar; x += langkah) g.fillRect(x, tengah - 1, LEBAR_BAR, 2);
+        g.globalAlpha = 1;
         return;
       }
-      g.fillStyle = ROSE_500;
+      g.fillStyle = warnaAktif;
       for (let umur = 0; umur < n; umur++) {
         const x = lebar - langkah * (umur + fase) - LEBAR_BAR;
         if (x < -langkah) break;

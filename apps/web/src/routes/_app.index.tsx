@@ -104,9 +104,9 @@ function Beranda() {
 function TombolRekam({ bisa }: { bisa: boolean }) {
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-0 z-20 flex justify-center bg-gradient-to-t from-background via-background/90 to-transparent pb-[max(1rem,env(safe-area-inset-bottom))] pt-10">
-      <Button asChild variant="record" className="pointer-events-auto h-auto flex-col gap-1.5 rounded-none bg-transparent p-0 hover:bg-transparent">
+      <Button asChild variant="ghost" className="pointer-events-auto h-auto flex-col gap-1.5 rounded-none bg-transparent p-0 hover:bg-transparent">
         <Link to={bisa ? "/rekam/baru" : "/permintaan"}>
-          <span className="grid size-[72px] place-items-center rounded-full bg-record text-record-foreground shadow-lg shadow-record/30 ring-4 ring-background transition-transform active:scale-95">
+          <span className="grid size-[72px] place-items-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 ring-4 ring-background transition-transform active:scale-95">
             <MicIcon className="size-8" aria-hidden />
           </span>
           <span className="text-sm font-semibold text-foreground">{bisa ? "Mulai rekaman" : "Ajukan rekaman"}</span>

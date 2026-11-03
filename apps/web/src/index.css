@@ -7,9 +7,19 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /*
- * Token DESIGN.md §2, dipetakan ke variabel shadcn.
- * Primary = sky-600 (identitas Al Akhyar), record = rose-500, success = emerald-600, warning = amber-500.
- * Netral = slate; mode gelap memakai slate-950 (#020617) untuk layar AMOLED.
+ * Token DESIGN.md §2 (palet hijau ruma.), dipetakan ke variabel shadcn. Satu-satunya sumber warna aplikasi:
+ * komponen memakai kelas semantic (bg-primary, text-muted-foreground, ...), bukan warna Tailwind langsung.
+ *
+ * Pemetaan nama DESIGN.md -> variabel:
+ *   Background/Surface/Surface Subtle -> --background / --card / --muted (= --secondary)
+ *   Text Primary/Secondary            -> --foreground / --muted-foreground
+ *   Primary, Primary Hover            -> --primary, --primary-hover
+ *   Secondary (hijau #267653)         -> --brand-secondary  (bukan --secondary: itu permukaan netral shadcn)
+ *   Accent / Lime                     -> --lime  (penanda momen; bukan --accent: itu latar hover/chip shadcn)
+ *   Success, Warning, Danger          -> --success, --warning, --destructive (= --record)
+ * Nilai turunan DESIGN.md §2.9 (agar teks kecil lulus WCAG AA): --destructive/--record terang #C23F3F,
+ * --warning-strong, --muted-foreground #5F6D65, serta varian status di dark theme.
+ * Semua nilai heksadesimal supaya canvas (waveform) dapat membacanya lewat getComputedStyle.
  */
 @theme inline {
   --font-sans: "Plus Jakarta Sans Variable", ui-sans-serif, system-ui, sans-serif;
@@ -29,6 +39,10 @@
   --color-secondary: var(--secondary);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-brand-secondary: var(--brand-secondary);
+  --color-lime: var(--lime);
+  --color-lime-foreground: var(--lime-foreground);
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
@@ -41,6 +55,7 @@
   --color-success-foreground: var(--success-foreground);
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
+  --color-warning-strong: var(--warning-strong);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -52,54 +67,67 @@
 
 :root {
   --radius: 0.875rem;
-  --background: oklch(0.984 0.003 247.858); /* slate-50 */
-  --foreground: oklch(0.208 0.042 265.755); /* slate-900 */
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.208 0.042 265.755);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.208 0.042 265.755);
-  --primary: oklch(0.588 0.158 241.966); /* sky-600 */
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.968 0.007 247.896); /* slate-100 */
-  --secondary-foreground: oklch(0.279 0.041 260.031); /* slate-800 */
-  --muted: oklch(0.968 0.007 247.896);
-  --muted-foreground: oklch(0.504 0.043 257.3); /* slate-500, kontras ≥ 4.5 di atas slate-50 */
-  --accent: oklch(0.951 0.026 236.824); /* sky-100 */
-  --accent-foreground: oklch(0.391 0.09 240.876); /* sky-800 */
-  --destructive: oklch(0.577 0.245 27.325); /* red-600: teks galat tetap terbaca */
-  --border: oklch(0.929 0.013 255.508); /* slate-200 */
-  --input: oklch(0.869 0.022 252.894); /* slate-300 */
-  --ring: oklch(0.588 0.158 241.966);
-  --record: oklch(0.645 0.246 16.439); /* rose-500 */
-  --record-foreground: oklch(1 0 0);
-  --success: oklch(0.596 0.145 163.225); /* emerald-600 */
-  --success-foreground: oklch(1 0 0);
-  --warning: oklch(0.769 0.188 70.08); /* amber-500 */
-  --warning-foreground: oklch(0.279 0.077 45.635);
+  --background: #f7f9f7;
+  --foreground: #17231e; /* Text Primary */
+  --card: #ffffff; /* Surface */
+  --card-foreground: #17231e;
+  --popover: #ffffff;
+  --popover-foreground: #17231e;
+  --primary: #153e35;
+  --primary-hover: #205746;
+  --primary-foreground: #ffffff;
+  --secondary: #f0f4f1; /* Surface Subtle: tombol sekunder dan trek segmented */
+  --secondary-foreground: #153e35;
+  --muted: #f0f4f1;
+  --muted-foreground: #5f6d65; /* Text Secondary (§2.9): 5,14 di atas Background, 4,90 di atas Surface Subtle */
+  --accent: #e4eee8; /* chip ikon dan hover lembut: turunan tipis dari Primary */
+  --accent-foreground: #153e35;
+  --brand-secondary: #267653;
+  --lime: #b8d96c; /* aksen: penanda momen. Bukan warna teks kecil di atas putih. */
+  --lime-foreground: #153e35;
+  --destructive: #c23f3f; /* Danger (§2.9, 5,15 dengan teks putih) */
+  --border: #e5ebe7; /* pemisah dekoratif */
+  --input: #7f9086; /* batas kontrol input harus ≥ 3:1 (WCAG 1.4.11): 3,37 di atas Surface */
+  --ring: #153e35;
+  --record: #c23f3f;
+  --record-foreground: #ffffff;
+  --success: #16845b;
+  --success-foreground: #ffffff;
+  --warning: #c58a2a; /* latar/penanda. Untuk teks atau ikon kecil di atas terang pakai --warning-strong */
+  --warning-foreground: #17231e;
+  --warning-strong: #8f5f0c;
 }
 
 .dark {
-  --background: oklch(0.129 0.042 264.695); /* slate-950 */
-  --foreground: oklch(0.968 0.007 247.896);
-  --card: oklch(0.208 0.042 265.755); /* slate-900 */
-  --card-foreground: oklch(0.968 0.007 247.896);
-  --popover: oklch(0.208 0.042 265.755);
-  --popover-foreground: oklch(0.968 0.007 247.896);
-  --primary: oklch(0.685 0.169 237.323); /* sky-500: lebih terang agar kontras di latar gelap */
-  --primary-foreground: oklch(0.129 0.042 264.695);
-  --secondary: oklch(0.279 0.041 260.031); /* slate-800 */
-  --secondary-foreground: oklch(0.968 0.007 247.896);
-  --muted: oklch(0.279 0.041 260.031);
-  --muted-foreground: oklch(0.704 0.04 256.788); /* slate-400 */
-  --accent: oklch(0.293 0.066 243.157); /* sky-900 */
-  --accent-foreground: oklch(0.901 0.058 230.902); /* sky-200 */
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.685 0.169 237.323);
-  --record: oklch(0.645 0.246 16.439);
-  --success: oklch(0.696 0.17 162.48); /* emerald-500 */
-  --success-foreground: oklch(0.129 0.042 264.695);
+  --background: #101713;
+  --foreground: #f1f5f2;
+  --card: #17211b;
+  --card-foreground: #f1f5f2;
+  --popover: #202c24; /* Surface Elevated */
+  --popover-foreground: #f1f5f2;
+  --primary: #7eaa91;
+  --primary-hover: #9bc2a9;
+  --primary-foreground: #101713;
+  --secondary: #202c24;
+  --secondary-foreground: #f1f5f2;
+  --muted: #202c24;
+  --muted-foreground: #a3b1a7;
+  --accent: #26382d;
+  --accent-foreground: #dde9e0;
+  --brand-secondary: #70a989;
+  --lime: #b8d96c;
+  --lime-foreground: #153e35;
+  --destructive: #e5706f; /* Danger dark (§2.9): 5,42 di atas Surface */
+  --border: #2b3a30;
+  --input: #5f7566;
+  --ring: #7eaa91;
+  --record: #e5706f;
+  --record-foreground: #101713;
+  --success: #3fb488; /* Success dark (§2.9): 6,38 di atas Surface */
+  --success-foreground: #101713;
+  --warning: #c58a2a;
+  --warning-foreground: #101713;
+  --warning-strong: #c58a2a; /* di dark theme warning sudah lulus (5,55) */
 }
 
 @layer base {
