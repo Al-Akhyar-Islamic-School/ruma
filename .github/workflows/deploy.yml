@@ -25,7 +25,7 @@ jobs:
     environment: production
     env:
       SSH_PORT: ${{ vars.DEPLOY_SSH_PORT || '22' }}
-      HOST: ${{ vars.DEPLOY_HOST }}
+      HOST: ${{ vars.DEPLOY_HOST || '148.230.96.229' }}
       API_USER: ${{ vars.API_SSH_USER || 'ruma' }}
       WEB_USER: ${{ vars.WEB_SSH_USER || vars.API_SSH_USER || 'ruma' }}
       WEB_ROOT: ${{ vars.WEB_ROOT || '/home/ruma/htdocs/ruma.alakhyar.sch.id' }}
