@@ -1,4 +1,6 @@
 import { ambilValidAccessToken } from "./google-auth.js";
+import { susunStrukturDokumen } from "./renderer-notulen.js";
+import { susunFormatBatchUpdate } from "./google-docs-format.js";
 
 const DOCS_BASE = "https://docs.googleapis.com/v1/documents";
 const DRIVE_BASE = "https://www.googleapis.com/drive/v3/files";
@@ -61,17 +63,34 @@ async function pindahkanKeFolder(token: string, fileId: string, folderId: string
   }
 }
 
-interface StylableRange {
-  start: number;
-  end: number;
-  type: "TITLE" | "SUBTITLE" | "HEADING_1" | "HEADING_2" | "BOLD" | "ITALIC";
+/** Bagikan berkas Google Docs (role: reader) ke email peserta yang diundang */
+async function bagikanKePeserta(token: string, fileId: string, emailList: string[]): Promise<void> {
+  for (const email of emailList) {
+    try {
+      await fetch(`${DRIVE_BASE}/${fileId}/permissions?sendNotificationEmail=false`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          role: "reader",
+          type: "user",
+          emailAddress: email,
+        }),
+      });
+    } catch {
+      // Non-blocking per email
+    }
+  }
 }
 
 export async function eksporKeGoogleDocs(
   userId: number,
   judulSesi: string,
   payload: DataNotulen,
-  existingFileId?: string | null
+  existingFileId?: string | null,
+  pesertaUndangan?: { nama: string; email: string }[]
 ): Promise<{ fileId: string; url: string }> {
   const token = await ambilValidAccessToken(userId);
   if (!token) {
@@ -83,7 +102,33 @@ export async function eksporKeGoogleDocs(
 
   let fileId = existingFileId;
 
-  // 1. Buat dokumen jika belum ada
+  // 1. Dapatkan atau buat dokumen baru
+  if (fileId) {
+    // Cek apakah dokumen lama masih ada dan bisa diakses
+    const resCek = await fetch(`${DOCS_BASE}/${fileId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!resCek.ok) {
+      // Jika dokumen lama sudah dihapus atau tidak ditemukan di Drive, reset fileId agar dibuatkan baru
+      fileId = null;
+    } else {
+      // Dokumen lama ada -> bersihkan konten lama sebelum diisi ulang (idempotent upsert)
+      const docObj = (await resCek.json()) as { body?: { content?: { endIndex?: number }[] } };
+      const content = docObj.body?.content || [];
+      const lastElement = content[content.length - 1];
+      const endIndex = (lastElement?.endIndex ?? 1) - 1;
+      if (endIndex > 1) {
+        await fetch(`${DOCS_BASE}/${fileId}:batchUpdate`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            requests: [{ deleteContentRange: { range: { startIndex: 1, endIndex } } }],
+          }),
+        });
+      }
+    }
+  }
+
   if (!fileId) {
     const resCreate = await fetch(DOCS_BASE, {
       method: "POST",
@@ -106,208 +151,14 @@ export async function eksporKeGoogleDocs(
     if (folderId) {
       await pindahkanKeFolder(token, fileId, folderId);
     }
-  } else {
-    // Jika dokumen sudah ada, bersihkan konten lama sebelum diisi ulang
-    try {
-      const resGet = await fetch(`${DOCS_BASE}/${fileId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (resGet.ok) {
-        const docObj = (await resGet.json()) as { body?: { content?: { endIndex?: number }[] } };
-        const content = docObj.body?.content || [];
-        const lastElement = content[content.length - 1];
-        const endIndex = (lastElement?.endIndex ?? 1) - 1;
-        if (endIndex > 1) {
-          await fetch(`${DOCS_BASE}/${fileId}:batchUpdate`, {
-            method: "POST",
-            headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-            body: JSON.stringify({
-              requests: [{ deleteContentRange: { range: { startIndex: 1, endIndex } } }],
-            }),
-          });
-        }
-      }
-    } catch {
-      // Jika pembersihan gagal, tetap lanjutkan
-    }
   }
 
-  // 2. Bangun teks beserta penanda styling
-  let buffer = "";
-  const styles: StylableRange[] = [];
+  // 2. Susun dokumen terstruktur via renderer-notulen (peserta dari undangan jika ada)
+  const rendered = susunStrukturDokumen(judulSesi, payload, pesertaUndangan);
+  // 3. Susun batchUpdate formatting & table styling via google-docs-format
+  const { requests } = susunFormatBatchUpdate(rendered, 1);
 
-  function tambahTeks(teks: string, style?: StylableRange["type"]) {
-    const startIndex = 1 + buffer.length;
-    buffer += teks;
-    const endIndex = 1 + buffer.length;
-    if (style) {
-      styles.push({ start: startIndex, end: endIndex, type: style });
-    }
-  }
-
-  // Header Dokumen
-  tambahTeks("SEKOLAH ISLAM AL AKHYAR\n", "TITLE");
-  tambahTeks("NOTULENSI RAPAT RESMI\n", "SUBTITLE");
-  tambahTeks("\n");
-
-  // Metadata Rapat
-  tambahTeks("INFORMASI RAPAT\n", "HEADING_2");
-  tambahTeks("Judul Sesi: ", "BOLD");
-  tambahTeks(`${judulSesi}\n`);
-  tambahTeks("Tanggal: ", "BOLD");
-  tambahTeks(`${tanggal}\n`);
-  if (payload.tempat) {
-    tambahTeks("Tempat: ", "BOLD");
-    tambahTeks(`${payload.tempat}\n`);
-  }
-  if (payload.pemimpin_rapat) {
-    tambahTeks("Pemimpin Rapat: ", "BOLD");
-    tambahTeks(`${payload.pemimpin_rapat}\n`);
-  }
-  if (payload.peserta_terdeteksi?.length) {
-    tambahTeks("Peserta Hadir: ", "BOLD");
-    tambahTeks(`${payload.peserta_terdeteksi.join(", ")}\n`);
-  }
-  tambahTeks("\n");
-
-  // Ringkasan Eksekutif
-  if (payload.ringkasan_eksekutif) {
-    tambahTeks("RINGKASAN EKSEKUTIF\n", "HEADING_1");
-    tambahTeks(`${payload.ringkasan_eksekutif}\n\n`);
-  }
-
-  // Agenda & Keputusan
-  if (payload.agenda_dan_keputusan?.length) {
-    tambahTeks("AGENDA & KEPUTUSAN\n", "HEADING_1");
-    payload.agenda_dan_keputusan.forEach((item, idx) => {
-      tambahTeks(`${idx + 1}. Agenda: `, "BOLD");
-      tambahTeks(`${item.agenda}\n`);
-      if (item.pembahasan) {
-        tambahTeks("   Pembahasan: ", "BOLD");
-        tambahTeks(`${item.pembahasan}\n`);
-      }
-      tambahTeks("   Keputusan: ", "BOLD");
-      tambahTeks(`${item.keputusan}\n\n`);
-    });
-  }
-
-  // Action Items / Tindak Lanjut
-  if (payload.action_items?.length) {
-    tambahTeks("MATRIKS TINDAK LANJUT (ACTION ITEMS)\n", "HEADING_1");
-    payload.action_items.forEach((task, idx) => {
-      tambahTeks(`[ ] ${idx + 1}. `, "BOLD");
-      tambahTeks(task.tugas);
-      if (task.pic) {
-        tambahTeks(`  (PIC: ${task.pic})`, "ITALIC");
-      }
-      if (task.tenggat_waktu) {
-        tambahTeks(` — Tenggat: ${task.tenggat_waktu}`, "BOLD");
-      }
-      tambahTeks("\n");
-    });
-    tambahTeks("\n");
-  }
-
-  tambahTeks("Disusun otomatis oleh ruma. — Your AI Meeting Companion\n", "ITALIC");
-
-  // 3. Susun permintaan batchUpdate: Insert Teks duluan, lalu berikan Typography & Styling
-  const requests: Record<string, unknown>[] = [
-    {
-      insertText: {
-        location: { index: 1 },
-        text: buffer,
-      },
-    },
-  ];
-
-  // Tambahkan formatting typography
-  for (const s of styles) {
-    if (s.type === "TITLE") {
-      requests.push({
-        updateParagraphStyle: {
-          range: { startIndex: s.start, endIndex: s.end },
-          paragraphStyle: {
-            namedStyleType: "TITLE",
-            alignment: "CENTER",
-            spaceBelow: { magnitude: 4, unit: "PT" },
-          },
-          fields: "namedStyleType,alignment,spaceBelow",
-        },
-      });
-      requests.push({
-        updateTextStyle: {
-          range: { startIndex: s.start, endIndex: s.end - 1 },
-          textStyle: {
-            bold: true,
-            foregroundColor: { color: { rgbColor: { red: 0.08, green: 0.24, blue: 0.21 } } }, // Forest green ruma.
-          },
-          fields: "bold,foregroundColor",
-        },
-      });
-    } else if (s.type === "SUBTITLE") {
-      requests.push({
-        updateParagraphStyle: {
-          range: { startIndex: s.start, endIndex: s.end },
-          paragraphStyle: {
-            namedStyleType: "SUBTITLE",
-            alignment: "CENTER",
-            spaceBelow: { magnitude: 16, unit: "PT" },
-          },
-          fields: "namedStyleType,alignment,spaceBelow",
-        },
-      });
-    } else if (s.type === "HEADING_1") {
-      requests.push({
-        updateParagraphStyle: {
-          range: { startIndex: s.start, endIndex: s.end },
-          paragraphStyle: {
-            namedStyleType: "HEADING_1",
-            spaceAbove: { magnitude: 12, unit: "PT" },
-            spaceBelow: { magnitude: 6, unit: "PT" },
-          },
-          fields: "namedStyleType,spaceAbove,spaceBelow",
-        },
-      });
-      requests.push({
-        updateTextStyle: {
-          range: { startIndex: s.start, endIndex: s.end - 1 },
-          textStyle: {
-            bold: true,
-            foregroundColor: { color: { rgbColor: { red: 0.08, green: 0.24, blue: 0.21 } } },
-          },
-          fields: "bold,foregroundColor",
-        },
-      });
-    } else if (s.type === "HEADING_2") {
-      requests.push({
-        updateParagraphStyle: {
-          range: { startIndex: s.start, endIndex: s.end },
-          paragraphStyle: {
-            namedStyleType: "HEADING_2",
-            spaceBelow: { magnitude: 4, unit: "PT" },
-          },
-          fields: "namedStyleType,spaceBelow",
-        },
-      });
-    } else if (s.type === "BOLD") {
-      requests.push({
-        updateTextStyle: {
-          range: { startIndex: s.start, endIndex: s.end },
-          textStyle: { bold: true },
-          fields: "bold",
-        },
-      });
-    } else if (s.type === "ITALIC") {
-      requests.push({
-        updateTextStyle: {
-          range: { startIndex: s.start, endIndex: s.end },
-          textStyle: { italic: true },
-          fields: "italic",
-        },
-      });
-    }
-  }
-
+  // 4. Eksekusi batchUpdate
   const resUpdate = await fetch(`${DOCS_BASE}/${fileId}:batchUpdate`, {
     method: "POST",
     headers: {
@@ -319,7 +170,12 @@ export async function eksporKeGoogleDocs(
 
   if (!resUpdate.ok) {
     const err = await resUpdate.text();
-    throw new Error(`Gagal memformat dokumen Google Docs: ${err}`);
+    throw new Error(`Gagal memformat dokumen Google Docs resmi: ${err}`);
+  }
+  // 5. Bagikan berkas Docs ke seluruh email peserta undangan (role reader)
+  if (pesertaUndangan && pesertaUndangan.length > 0) {
+    const emailList = [...new Set(pesertaUndangan.map((p) => p.email.toLowerCase()).filter(Boolean))];
+    await bagikanKePeserta(token, fileId, emailList);
   }
 
   const url = `https://docs.google.com/document/d/${fileId}/edit`;

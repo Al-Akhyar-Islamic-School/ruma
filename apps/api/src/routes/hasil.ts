@@ -13,6 +13,7 @@ import { audioStorage } from "../storage.js";
 import { emailBaku } from "../validasi.js";
 import { statusDriveUser, urlOAuthDrive } from "../integrasi/google-auth.js";
 import { eksporKeGoogleDocs, type DataNotulen } from "../integrasi/google-docs.js";
+import { daftarPesertaDariUndangan } from "../integrasi/peserta-undangan.js";
 
 const uuidParam = z.object({ uuid: z.uuid() });
 const tugasParam = z.object({ uuid: z.uuid(), id: z.coerce.number().int().positive() });
@@ -175,11 +176,13 @@ export const hasilRoutes = new Hono<AuthEnv>()
     }
 
     try {
+      const pesertaUndangan = await daftarPesertaDariUndangan(s.id);
       const hasil = await eksporKeGoogleDocs(
         user.id,
         s.judul,
         d.payload as DataNotulen,
-        d.googleDocsFileId
+        d.googleDocsFileId,
+        pesertaUndangan
       );
       await db
         .update(dokumen)
