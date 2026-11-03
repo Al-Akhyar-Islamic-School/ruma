@@ -44,11 +44,10 @@ Dokumen ini adalah ringkasan status implementasi saat ini dan peta jalan pengemb
 - [ ] Notulen rapat lanjutan otomatis menyambung di berkas Google Docs yang sama (halaman baru / bab baru per tanggal pertemuan).
 - [ ] Action items dari rapat pekan lalu otomatis dimunculkan sebagai bahan review di rapat pekan ini.
 
-### Fase 3: Integrasi Agenda SIM-GTK (`docs/rencana-rapat-rekursif-dan-simgtk.md`)
-- [ ] Menarik agenda rapat terjadwal dari SIM-GTK langsung ke form pembuatan sesi ruma.
-- [ ] Otomatis mengisi judul, tanggal, dan daftar undangan dari SIM-GTK.
-- [ ] Kirim kembali status notulen selesai ke SIM-GTK.
-
+### Fase 3: Integrasi Agenda SIM-GTK (`docs/konsep-integrasi-agenda-simgtk.md`)
+- [ ] Alur 2 arah: ruma. menarik daftar agenda hari ini (`GET /agenda`), mengisi otomatis judul & peserta.
+- [ ] Kolom `simgtk_agenda_id` di tabel `ruma_sesi`.
+- [ ] Callback dua arah: saat notulen disetujui, ruma. mengirim balik `ruma_sesi_url` dan `google_docs_url` ke SIMGTK agar bisa dibuka langsung dari SIM-GTK.
 ### Fase 4: Integrasi Google Meet (`docs/rencana-google-meet.md`)
 - [ ] Perekam audio tab Google Meet di peramban desktop (`getDisplayMedia`).
 - [ ] Opsi impor berkas transkrip otomatis Google Meet dari Google Drive langsung ke ruma.
