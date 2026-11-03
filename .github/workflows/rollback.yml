@@ -1,0 +1,49 @@
+name: Rollback API
+
+# Mengembalikan API ke rilis sebelumnya (atau rilis tertentu). Hanya kode: database TIDAK dikembalikan,
+# jadi migrasi harus selalu kompatibel dengan kode lama (tambah dulu, hapus belakangan).
+
+on:
+  workflow_dispatch:
+    inputs:
+      rilis:
+        description: "ID rilis tujuan (kosong = rilis sebelum yang aktif). Daftar: ls ~/app/releases di VPS"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  rollback:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Siapkan SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+      - name: Rollback
+        env:
+          HOST: ${{ vars.DEPLOY_HOST }}
+          SSH_PORT: ${{ vars.DEPLOY_SSH_PORT || '22' }}
+          API_USER: ${{ vars.API_SSH_USER }}
+          API_APP_DIR: ${{ vars.API_APP_DIR || 'app' }}
+          PM2_NAME: ${{ vars.PM2_NAME || 'ruma-api' }}
+          RILIS: ${{ inputs.rilis }}
+        run: |
+          ssh -i ~/.ssh/deploy_key -p "$SSH_PORT" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            "$API_USER@$HOST" "APP_DIR='$API_APP_DIR' PM2_NAME='$PM2_NAME' bash -s -- '$RILIS'" < deploy/remote-rollback.sh

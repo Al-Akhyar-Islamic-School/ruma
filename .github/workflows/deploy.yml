@@ -1,0 +1,120 @@
+name: Deploy
+
+# Build sekali di runner, kirim artefak jadi ke VPS CloudPanel lewat SSH. Tidak ada build di server.
+# Penyiapan satu kali di VPS dan daftar secret/variable: docs/deploy-cloudpanel.md
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Satu deploy pada satu waktu; deploy yang sedang berjalan tidak dibatalkan di tengah migrasi.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    # Secret dan variable disimpan di Environment "production" (bisa diberi persetujuan manual).
+    environment: production
+    env:
+      SSH_PORT: ${{ vars.DEPLOY_SSH_PORT || '22' }}
+      HOST: ${{ vars.DEPLOY_HOST }}
+      API_USER: ${{ vars.API_SSH_USER }}
+      WEB_USER: ${{ vars.WEB_SSH_USER }}
+      API_APP_DIR: ${{ vars.API_APP_DIR || 'app' }}
+      PM2_NAME: ${{ vars.PM2_NAME || 'ruma-api' }}
+      WEB_ROOT: ${{ vars.WEB_ROOT }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm -r typecheck
+
+      - name: Migrasi sinkron dengan schema.ts
+        run: |
+          pnpm --filter @kalam/api exec drizzle-kit generate
+          if [ -n "$(git status --porcelain apps/api/drizzle)" ]; then
+            echo "::error::schema.ts berubah tetapi migrasinya belum dibuat."
+            exit 1
+          fi
+
+      - name: Build artefak API
+        run: |
+          pnpm --filter @kalam/api build
+          pnpm --filter @kalam/api --prod deploy out/api
+          cp deploy/ecosystem.config.cjs out/api/
+          test -f out/api/dist/index.js
+          test -f out/api/dist/db/migrate.js
+          test -d out/api/drizzle
+
+      - name: Build web
+        run: pnpm --filter @kalam/web build
+        env:
+          VITE_API_URL: ${{ vars.VITE_API_URL }}
+
+      - name: Siapkan SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          for v in HOST API_USER WEB_USER WEB_ROOT; do
+            [ -n "${!v}" ] || { echo "::error::variable $v belum diisi (Settings > Environments > production)"; exit 1; }
+          done
+          [ -n "$DEPLOY_SSH_KEY" ] && [ -n "$DEPLOY_KNOWN_HOSTS" ] || { echo "::error::secret DEPLOY_SSH_KEY / DEPLOY_KNOWN_HOSTS belum diisi"; exit 1; }
+          [ -n "${{ vars.VITE_API_URL }}" ] || { echo "::error::variable VITE_API_URL belum diisi"; exit 1; }
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          # Host key dipin: tidak ada StrictHostKeyChecking=no.
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          cat > ~/.ssh/config <<CONF
+          Host deploy-target
+            HostName $HOST
+            Port $SSH_PORT
+            IdentityFile ~/.ssh/deploy_key
+            IdentitiesOnly yes
+            StrictHostKeyChecking yes
+            ServerAliveInterval 30
+          CONF
+
+      - name: Kirim dan aktifkan API
+        run: |
+          ID="$(date -u +%Y%m%d%H%M%S)-${GITHUB_SHA::7}"
+          ssh "$API_USER@deploy-target" "mkdir -p '$API_APP_DIR/releases'"
+          rsync -az --delete -e ssh out/api/ "$API_USER@deploy-target:$API_APP_DIR/releases/$ID/"
+          ssh "$API_USER@deploy-target" "APP_DIR='$API_APP_DIR' PM2_NAME='$PM2_NAME' bash -s -- '$ID'" < deploy/remote-api.sh
+          echo "rilis_api=$ID" >> "$GITHUB_OUTPUT"
+        id: api
+
+      # Web setelah API sehat: skema/API baru sudah aktif sebelum klien baru tersedia.
+      # Dua tahap supaya index.html lama tidak pernah menunjuk berkas ber-hash yang sudah terhapus.
+      - name: Kirim web
+        run: |
+          rsync -az -e ssh \
+            --exclude index.html --exclude sw.js --exclude 'workbox-*.js' --exclude manifest.webmanifest \
+            apps/web/dist/ "$WEB_USER@deploy-target:$WEB_ROOT/"
+          rsync -az --delete -e ssh apps/web/dist/ "$WEB_USER@deploy-target:$WEB_ROOT/"
+
+      - name: Ringkasan
+        run: |
+          {
+            echo "### Deploy selesai"
+            echo "- Commit: \`${GITHUB_SHA::7}\`"
+            echo "- Rilis API: \`${{ steps.api.outputs.rilis_api }}\`"
+            echo "- Web: \`${{ vars.VITE_API_URL }}\` sebagai API"
+          } >> "$GITHUB_STEP_SUMMARY"

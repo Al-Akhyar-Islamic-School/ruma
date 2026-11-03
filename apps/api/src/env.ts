@@ -5,6 +5,9 @@ const opt = <T extends z.ZodType>(s: T) => z.preprocess((v) => (v === "" ? undef
 const schema = z.object({
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   PORT: z.coerce.number().int().default(3000),
+  // Alamat bind. Di belakang reverse proxy (CloudPanel/Nginx) isi 127.0.0.1 supaya API tidak terbuka langsung di port ini.
+  // Kosong = semua antarmuka (dev).
+  HOST: z.preprocess((v) => (v === "" ? undefined : v), z.string().trim().min(1).optional()),
   API_URL: z.url(),
   APP_URL: z.url(),
   DATABASE_URL: z.string().min(1),

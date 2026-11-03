@@ -1,7 +1,11 @@
-# ruma. — Your AI Meeting Companion (by Al Akhyar)
+# ruma.
 
-> **Aplikasi PWA Perekam Rapat & Observasi Kelas Cerdas Berbasis AI Hybrid (Cloudflare Whisper + Google Gemini)**  
-> Didesain khusus untuk ekosistem Yayasan & Sekolah Islam Al Akhyar.
+**by Al Akhyar** · *Your AI Meeting Companion*
+
+> **Listen · Understand · Summarize**
+>
+> Aplikasi PWA perekam rapat dan observasi kelas berbasis AI hybrid (Cloudflare Whisper + Google Gemini),
+> didesain khusus untuk ekosistem Yayasan & Sekolah Islam Al Akhyar.
 
 ---
 
@@ -15,7 +19,19 @@ Di lingkungan sekolah, ada dua beban administratif audio-ke-teks yang paling mem
    - Kepala sekolah / pengawas harus membagi fokus antara mengamati interaksi guru-murid dan mencatat poin rubrik observasi.
    - Penyusunan laporan supervisi dan catatan reflektif guru sering tertunda berhari-hari setelah supervisi selesai.
 
-**ruma.** (*Listen · Understand · Summarize*) hadir sebagai *teacher & principal assistant* mirip konsep Plaud Note, tetapi berbentuk **PWA web/mobile mandiri**, menggunakan kombinasi AI **Cloudflare Whisper (gratis)** untuk transkripsi audio dan **Google Gemini (konteks 2M token)** untuk penalaran dokumen resmi sekolah.
+**ruma.** hadir sebagai *teacher & principal assistant* mirip konsep Plaud Note, tetapi berbentuk **PWA web/mobile mandiri**, menggunakan kombinasi AI **Cloudflare Whisper (gratis)** untuk transkripsi audio dan **Google Gemini (konteks 2M token)** untuk penalaran dokumen resmi sekolah.
+
+### Fungsi
+
+| Fungsi | Isi | Halaman |
+|---|---|---|
+| **Transcription** | Rekaman suara menjadi teks berstempel waktu, dengan pemutar audio yang menyorot kalimat yang sedang diucapkan. | Hasil rekaman → Transkrip |
+| **Meeting Summary** | Ringkasan eksekutif dan poin pembahasan per agenda; draf AI diperiksa dan disetujui perekam sebelum dibaca peserta. | Hasil rekaman → Notulen |
+| **Action Items** | Tugas, penanggung jawab (PIC dari direktori GTK), tenggat, dan status. | Hasil rekaman → Tugas |
+| **Decisions** | Keputusan per agenda, juga dalam daftar lintas rapat yang bisa disaring. | Pengetahuan → Keputusan |
+| **Knowledge Management** | Pencarian teks penuh lintas rapat (judul, ringkasan, keputusan, tugas, transkrip) dengan kata kunci tersorot. | Pengetahuan → Cari |
+
+Nama aplikasi yang tampil ke pengguna adalah **ruma.** Pengenal internal (paket `@kalam/*`, awalan tabel `kalam_`, nama folder repo `kalam-ai/`) sengaja tidak diganti: tidak terlihat pengguna, dan mengganti tabel atau cookie butuh migrasi data.
 
 ---
 
@@ -205,3 +221,7 @@ pnpm --filter @kalam/web build                   # produksi + service worker PWA
 - Layar: login Google, beranda (rekaman saya / dibagikan), setup + perekam live (offline-first: tiap potongan 30 dtk disimpan di IndexedDB sebelum diunggah; pemulihan setelah crash; batas durasi persetujuan ditegakkan), halaman hasil (notulen/lembar observasi, tugas + tag PIC, transkrip interaktif dengan pemutar audio, setujui dokumen, undangan), grup undangan, permintaan rekaman, dan area admin (permintaan, pengguna, antrean, GTK, semua sesi untuk superadmin).
 - Mikrofon di browser hanya jalan di **HTTPS** (atau `localhost`).
 - Belum ada: ekspor PDF/Word, WhatsApp pengingat tugas, tanda tangan, kuota AI (endpoint belum ada).
+
+## 7. Deploy (VPS CloudPanel + GitHub Actions)
+
+Push ke `main` membangun di runner GitHub dan mengirim artefak ke VPS lewat SSH: migrasi database, pindah rilis (symlink `current`), reload pm2, lalu **health check** dengan rollback otomatis. Pull request menjalankan CI (typecheck, build, dan pemeriksaan bahwa `schema.ts` tidak berubah tanpa migrasi). Workflow: `.github/workflows/{ci,deploy,rollback}.yml`; skrip server dan konfigurasi: `deploy/`. Penyiapan satu kali (CloudPanel, kunci SSH, secret GitHub, `.env` produksi), operasional, rollback, dan backup: [`docs/deploy-cloudpanel.md`](docs/deploy-cloudpanel.md).

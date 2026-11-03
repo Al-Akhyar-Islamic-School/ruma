@@ -1,6 +1,7 @@
 {
   "name": "kalam-ai",
   "private": true,
+  "packageManager": "pnpm@9.15.2",
   "scripts": {
     "dev:api": "pnpm --filter @kalam/api dev",
     "dev:web": "pnpm --filter @kalam/web dev",

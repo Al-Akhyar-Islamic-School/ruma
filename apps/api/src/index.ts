@@ -7,8 +7,8 @@ import { closeDb } from "./db/index.js";
 import { migrasiTertinggal } from "./db/migrasi.js";
 import { env } from "./env.js";
 
-const server = serve({ fetch: app.fetch, port: env.PORT }, (i) =>
-  console.log(`kalam-api listening on :${i.port}`),
+const server = serve({ fetch: app.fetch, port: env.PORT, hostname: env.HOST }, (i) =>
+  console.log(`kalam-api listening on ${i.address}:${i.port}`),
 );
 
 const purge = setInterval(() => void purgeExpiredSessions().catch(console.error), 60 * 60 * 1000);
