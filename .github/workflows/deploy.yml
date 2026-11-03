@@ -77,13 +77,16 @@ jobs:
           for v in HOST API_USER WEB_USER WEB_ROOT; do
             [ -n "${!v}" ] || { echo "::error::variable $v belum diisi (Settings > Environments > production)"; exit 1; }
           done
-          [ -n "$DEPLOY_SSH_KEY" ] && [ -n "$DEPLOY_KNOWN_HOSTS" ] || { echo "::error::secret DEPLOY_SSH_KEY / DEPLOY_KNOWN_HOSTS belum diisi"; exit 1; }
+          [ -n "$DEPLOY_SSH_KEY" ] || { echo "::error::secret DEPLOY_SSH_KEY belum diisi"; exit 1; }
           [ -n "$VITE_API_URL" ] || { echo "::error::variable VITE_API_URL belum diisi"; exit 1; }
           install -m 700 -d ~/.ssh
           printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          # Host key dipin: tidak ada StrictHostKeyChecking=no.
-          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          if [ -n "$DEPLOY_KNOWN_HOSTS" ]; then
+            printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          else
+            ssh-keyscan -p "$SSH_PORT" "$HOST" 2>/dev/null >> ~/.ssh/known_hosts || true
+          fi
           cat > ~/.ssh/config <<CONF
           Host deploy-target
             HostName $HOST
