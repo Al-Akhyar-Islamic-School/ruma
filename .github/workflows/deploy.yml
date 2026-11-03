@@ -26,11 +26,12 @@ jobs:
     env:
       SSH_PORT: ${{ vars.DEPLOY_SSH_PORT || '22' }}
       HOST: ${{ vars.DEPLOY_HOST }}
-      API_USER: ${{ vars.API_SSH_USER }}
-      WEB_USER: ${{ vars.WEB_SSH_USER }}
+      API_USER: ${{ vars.API_SSH_USER || 'ruma' }}
+      WEB_USER: ${{ vars.WEB_SSH_USER || vars.API_SSH_USER || 'ruma' }}
+      WEB_ROOT: ${{ vars.WEB_ROOT || '/home/ruma/htdocs/ruma.alakhyar.sch.id' }}
+      VITE_API_URL: ${{ vars.VITE_API_URL || 'https://ruma.alakhyar.sch.id' }}
       API_APP_DIR: ${{ vars.API_APP_DIR || 'app' }}
       PM2_NAME: ${{ vars.PM2_NAME || 'ruma-api' }}
-      WEB_ROOT: ${{ vars.WEB_ROOT }}
     steps:
       - uses: actions/checkout@v4
 
@@ -66,7 +67,7 @@ jobs:
       - name: Build web
         run: pnpm --filter @kalam/web build
         env:
-          VITE_API_URL: ${{ vars.VITE_API_URL }}
+          VITE_API_URL: ${{ env.VITE_API_URL }}
 
       - name: Siapkan SSH
         env:
@@ -77,7 +78,7 @@ jobs:
             [ -n "${!v}" ] || { echo "::error::variable $v belum diisi (Settings > Environments > production)"; exit 1; }
           done
           [ -n "$DEPLOY_SSH_KEY" ] && [ -n "$DEPLOY_KNOWN_HOSTS" ] || { echo "::error::secret DEPLOY_SSH_KEY / DEPLOY_KNOWN_HOSTS belum diisi"; exit 1; }
-          [ -n "${{ vars.VITE_API_URL }}" ] || { echo "::error::variable VITE_API_URL belum diisi"; exit 1; }
+          [ -n "$VITE_API_URL" ] || { echo "::error::variable VITE_API_URL belum diisi"; exit 1; }
           install -m 700 -d ~/.ssh
           printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
