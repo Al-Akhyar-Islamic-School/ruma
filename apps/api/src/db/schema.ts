@@ -191,6 +191,9 @@ export const dokumen = mysqlTable("ruma_dokumen", {
   statusVerifikasi: mysqlEnum("status_verifikasi", ["draf", "disetujui"]).notNull().default("draf"),
   disetujuiOleh: ref("disetujui_oleh").references(() => users.id),
   disetujuiPada: timestamp("disetujui_pada"),
+  // Ekspor ke Google Docs (OAuth Drive pengguna)
+  googleDocsFileId: varchar("google_docs_file_id", { length: 255 }),
+  googleDocsUrl: varchar("google_docs_url", { length: 500 }),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
 });
@@ -207,6 +210,20 @@ export const actionItems = mysqlTable("ruma_action_items", {
   picEmail: varchar("pic_email", { length: 255 }),
   tenggatWaktu: date("tenggat_waktu", { mode: "string" }),
   status: mysqlEnum("status", ["pending", "proses", "selesai"]).notNull().default("pending"),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+});
+
+/** Token Google OAuth tambahan (Drive/Docs) per pengguna, disimpan terenkripsi di server. */
+export const userTokens = mysqlTable("ruma_user_tokens", {
+  userId: ref("user_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  accessToken: text("access_token").notNull(),
+  refreshToken: text("refresh_token"),
+  tokenType: varchar("token_type", { length: 50 }).notNull().default("Bearer"),
+  scope: text("scope").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
 });

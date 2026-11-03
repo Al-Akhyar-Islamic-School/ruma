@@ -5,6 +5,7 @@ import { formatDurasi, formatWaktu } from "@/lib/format";
 import { labelKategori, useKategori } from "@/lib/kategori";
 import { SetujuiDokumen } from "./setujui-dokumen";
 import { StatusBadge } from "./status-badge";
+import { TombolGoogleDocs } from "./tombol-google-docs";
 import type { DetailSesi } from "./queries";
 
 /** Kepala halaman: kembali, judul, status, meta, dan aksi perekam (Undang, Setujui dokumen). */
@@ -52,12 +53,13 @@ export function KepalaSesi({
         </div>
       </div>
       {sesi.adalahPerekam && (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" size="sm" onClick={onUndang}>
             <UserPlusIcon />
             Undang
           </Button>
           {bisaSetujui && <SetujuiDokumen uuid={sesi.uuid} />}
+          {sesi.tipeSesi === "rapat" && !bisaSetujui && <TombolGoogleDocs uuid={sesi.uuid} />}
         </div>
       )}
     </header>

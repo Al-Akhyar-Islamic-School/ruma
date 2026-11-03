@@ -11,6 +11,8 @@ import { db } from "../db/index.js";
 import { actionItems, dokumen, gtk, sesi, transkrip, users } from "../db/schema.js";
 import { audioStorage } from "../storage.js";
 import { emailBaku } from "../validasi.js";
+import { statusDriveUser, urlOAuthDrive } from "../integrasi/google-auth.js";
+import { eksporKeGoogleDocs, type DataNotulen } from "../integrasi/google-docs.js";
 
 const uuidParam = z.object({ uuid: z.uuid() });
 const tugasParam = z.object({ uuid: z.uuid(), id: z.coerce.number().int().positive() });
@@ -85,10 +87,10 @@ export const hasilRoutes = new Hono<AuthEnv>()
       statusVerifikasi: d.statusVerifikasi,
       disetujuiPada: d.disetujuiPada,
       model: d.geminiModel,
+      googleDocsUrl: d.googleDocsUrl ?? null,
       actionItems: items,
     });
   })
-  // Perekam menyetujui draf AI: sejak itu dokumen terlihat oleh yang diundang.
   .post("/:uuid/dokumen/setujui", zValidator("param", uuidParam), async (c) => {
     const s = await findOwn(c.var.user, c.req.valid("param").uuid);
     if (!s) return c.json({ error: "not_found" }, 404);
@@ -148,4 +150,46 @@ export const hasilRoutes = new Hono<AuthEnv>()
     if (!s) return c.json({ error: "not_found" }, 404);
     if (!s.audioPath) return c.json({ error: "belum_tersedia", status: s.status }, 404);
     return kirimBerkas(audioStorage.localPath(s.audioPath), c.req.header("range"), "audio/mpeg");
+  })
+  // Status integrasi Google Docs untuk sesi ini
+  .get("/:uuid/dokumen/google-docs/status", zValidator("param", uuidParam), async (c) => {
+    const user = c.var.user;
+    const s = await findReadable(user, c.req.valid("param").uuid);
+    if (!s) return c.json({ error: "not_found" }, 404);
+    const [d] = await db.select().from(dokumen).where(eq(dokumen.sesiId, s.id)).limit(1);
+    const driveTersambung = await statusDriveUser(user.id);
+    return c.json({
+      driveTersambung,
+      urlAuth: driveTersambung ? null : urlOAuthDrive(`sesi_${s.uuid}`),
+      googleDocsUrl: d?.googleDocsUrl ?? null,
+    });
+  })
+  // Ekspor notulen yang disetujui ke Google Docs
+  .post("/:uuid/dokumen/google-docs/ekspor", zValidator("param", uuidParam), async (c) => {
+    const user = c.var.user;
+    const s = await findOwn(user, c.req.valid("param").uuid);
+    if (!s) return c.json({ error: "not_found" }, 404);
+    const [d] = await db.select().from(dokumen).where(eq(dokumen.sesiId, s.id)).limit(1);
+    if (!d || d.statusVerifikasi !== "disetujui") {
+      return c.json({ error: "dokumen_belum_disetujui" }, 400);
+    }
+
+    try {
+      const hasil = await eksporKeGoogleDocs(
+        user.id,
+        s.judul,
+        d.payload as DataNotulen,
+        d.googleDocsFileId
+      );
+      await db
+        .update(dokumen)
+        .set({
+          googleDocsFileId: hasil.fileId,
+          googleDocsUrl: hasil.url,
+        })
+        .where(eq(dokumen.id, d.id));
+      return c.json({ ok: true, url: hasil.url });
+    } catch (e) {
+      return c.json({ error: (e as Error).message }, 500);
+    }
   });

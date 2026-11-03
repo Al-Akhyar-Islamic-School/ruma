@@ -10,6 +10,7 @@ import { env, isProd } from "../env.js";
 import { bisaBuatSesiLangsung, MODERATOR } from "../permissions.js";
 import { modulSupervisiAktif } from "../pengaturan.js";
 
+import { putusDriveUser, statusDriveUser, tukarKodeDrive, urlOAuthDrive } from "../integrasi/google-auth.js";
 const TX_PATH = "/auth/google";
 const rand = () => randomBytes(32).toString("base64url");
 
@@ -111,4 +112,30 @@ export const auth = new Hono()
       // Saklar modul (superadmin yang mengubah). UI menyembunyikan fitur modul yang mati; server tetap menegakkan.
       modul: { supervisi },
     });
+  })
+  // Sambungkan Google Drive (izin baca-tulis berkas ruma.)
+  .get("/google/drive", requireAuth, (c) => {
+    const state = c.req.query("state") || "";
+    return c.redirect(urlOAuthDrive(state));
+  })
+  .get("/google/drive/callback", requireAuth, async (c) => {
+    const { code, state, error } = c.req.query();
+    if (error || !code) {
+      return c.redirect(`${env.APP_URL}?error=drive_dibatalkan`);
+    }
+    try {
+      await tukarKodeDrive(code, c.var.user.id);
+      // Jika state membawa ID sesi (misal sesi_uuid), redirect ke sesi itu
+      if (state && state.startsWith("sesi_")) {
+        const uuid = state.slice(5);
+        return c.redirect(`${env.APP_URL}/sesi/${uuid}?drive=tersambung`);
+      }
+      return c.redirect(`${env.APP_URL}?drive=tersambung`);
+    } catch (e) {
+      return c.redirect(`${env.APP_URL}?error=drive_gagal`);
+    }
+  })
+  .delete("/google/drive", requireAuth, async (c) => {
+    await putusDriveUser(c.var.user.id);
+    return c.json({ ok: true });
   });

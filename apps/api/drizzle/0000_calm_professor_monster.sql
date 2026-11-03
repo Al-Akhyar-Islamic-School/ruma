@@ -32,6 +32,8 @@ CREATE TABLE `ruma_dokumen` (
 	`status_verifikasi` enum('draf','disetujui') NOT NULL DEFAULT 'draf',
 	`disetujui_oleh` bigint unsigned,
 	`disetujui_pada` timestamp,
+	`google_docs_file_id` varchar(255),
+	`google_docs_url` varchar(500),
 	`created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	`updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 	CONSTRAINT `ruma_dokumen_id` PRIMARY KEY(`id`)
@@ -169,6 +171,18 @@ CREATE TABLE `ruma_transkrip` (
 	CONSTRAINT `transkrip_sesi_uq` UNIQUE(`sesi_id`)
 );
 --> statement-breakpoint
+CREATE TABLE `ruma_user_tokens` (
+	`user_id` bigint unsigned NOT NULL,
+	`access_token` text NOT NULL,
+	`refresh_token` text,
+	`token_type` varchar(50) NOT NULL DEFAULT 'Bearer',
+	`scope` text NOT NULL,
+	`expires_at` timestamp NOT NULL,
+	`created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	`updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `ruma_user_tokens_user_id` PRIMARY KEY(`user_id`)
+);
+--> statement-breakpoint
 CREATE TABLE `ruma_users` (
 	`id` bigint unsigned AUTO_INCREMENT NOT NULL,
 	`google_sub` varchar(64) NOT NULL,
@@ -203,6 +217,7 @@ ALTER TABLE `ruma_sesi_undangan` ADD CONSTRAINT `ruma_sesi_undangan_grup_id_ruma
 ALTER TABLE `ruma_sesi_undangan` ADD CONSTRAINT `ruma_sesi_undangan_dibuat_oleh_ruma_users_id_fk` FOREIGN KEY (`dibuat_oleh`) REFERENCES `ruma_users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `ruma_sessions` ADD CONSTRAINT `ruma_sessions_user_id_ruma_users_id_fk` FOREIGN KEY (`user_id`) REFERENCES `ruma_users`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `ruma_transkrip` ADD CONSTRAINT `ruma_transkrip_sesi_id_ruma_sesi_id_fk` FOREIGN KEY (`sesi_id`) REFERENCES `ruma_sesi`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `ruma_user_tokens` ADD CONSTRAINT `ruma_user_tokens_user_id_ruma_users_id_fk` FOREIGN KEY (`user_id`) REFERENCES `ruma_users`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX `grup_owner_idx` ON `ruma_grup` (`owner_id`);--> statement-breakpoint
 CREATE INDEX `grup_anggota_email_idx` ON `ruma_grup_anggota` (`email`);--> statement-breakpoint
 CREATE INDEX `gtk_unit_idx` ON `ruma_gtk_unit` (`unit`);--> statement-breakpoint
