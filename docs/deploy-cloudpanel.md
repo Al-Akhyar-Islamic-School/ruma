@@ -1,10 +1,10 @@
 # Deploy ke VPS CloudPanel (GitHub Actions)
 
-Setiap push ke `main` membangun aplikasi di runner GitHub lalu mengirim hasilnya ke VPS lewat SSH. **Tidak ada build di server.**
+Workflow deploy ke produksi **hanya berjalan otomatis bila ada push tag release `release-prod-*`** (atau tombol *Run workflow* manual di tab Actions). Push biasa ke branch `main` atau pull request hanya menjalankan CI verifikasi (typecheck & build). **Tidak ada build di server.**
 
 ```mermaid
 flowchart LR
-  G[push ke main] --> A[GitHub Actions: typecheck, cek migrasi, build]
+  G[Push tag release-prod-*] --> A[GitHub Actions: typecheck, cek migrasi, build]
   A -->|rsync + ssh| V
   subgraph V[VPS CloudPanel]
     N[Nginx + Let's Encrypt] -->|ruma.alakhyar.sch.id| W[situs Static: web PWA]
@@ -81,10 +81,17 @@ Hal penting di `.env` produksi: `HOST=127.0.0.1`, `PORT=3100` (sama dengan App P
 | Variable | `API_APP_DIR` | opsional, default `app` (relatif terhadap home) |
 | Variable | `PM2_NAME` | opsional, default `ruma-api` |
 
-## 3. Deploy pertama
+## 3. Eksekusi Deploy (Tag Release)
 
-Push ke `main` atau **Actions → Deploy → Run workflow**. Periksa:
+Deploy ke produksi berjalan otomatis saat Anda membuat tag release:
+```bash
+# Buat tag dengan tanggal rilis, lalu push tag:
+git tag release-prod-2026.11.04-1
+git push origin release-prod-2026.11.04-1
+```
+*(Atau jalankan manual via GitHub Web: **Actions ➔ Deploy ➔ Run workflow**).*
 
+Setelah workflow Actions selesai, periksa hasilnya:
 ```bash
 curl -s https://api.ruma.alakhyar.sch.id/health     # {"ok":true,"migrasiTertinggal":0}
 ```
