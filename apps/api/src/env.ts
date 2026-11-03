@@ -10,6 +10,13 @@ const schema = z.object({
   HOST: z.preprocess((v) => (v === "" ? undefined : v), z.string().trim().min(1).optional()),
   API_URL: z.url(),
   APP_URL: z.url(),
+  // Origin yang diizinkan untuk CORS dan mutasi POST/PUT/DELETE.
+  // Bisa diisi beberapa domain dipisah koma (misal: "https://ruma.alakhyar.sch.id,https://simgtk.alakhyar.sch.id").
+  // Jika kosong, otomatis memakai APP_URL.
+  CORS_ORIGINS: z
+    .string()
+    .default("")
+    .transform((s) => (s ? s.split(",").map((o) => o.trim().replace(/\/+$/, "")).filter(Boolean) : [])),
   DATABASE_URL: z.string().min(1),
   GOOGLE_CLIENT_ID: z.string().min(1),
   GOOGLE_CLIENT_SECRET: z.string().min(1),

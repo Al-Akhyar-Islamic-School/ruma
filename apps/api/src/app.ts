@@ -14,12 +14,28 @@ import { seriRapatRoutes } from "./routes/seri.js";
 import { simgtkAgendaRoutes } from "./routes/simgtk-agenda.js";
 
 export const app = new Hono()
-  .use(cors({ origin: env.APP_URL, credentials: true }))
+  .use(async (c, next) => {
+    const izinkanOrigin = (asal: string | undefined): boolean => {
+      if (!asal) return false;
+      const normal = asal.replace(/\/+$/, "");
+      if (normal === env.APP_URL.replace(/\/+$/, "")) return true;
+      return env.CORS_ORIGINS.includes(normal);
+    };
+
+    return cors({
+      origin: (asal) => (izinkanOrigin(asal) ? asal : null),
+      credentials: true,
+    })(c, next);
+  })
   // Cookie sesi + SameSite=Lax belum cukup untuk same-site lintas subdomain: tolak mutasi dari origin lain.
   .use(async (c, next) => {
     if (!["GET", "HEAD", "OPTIONS"].includes(c.req.method)) {
       const origin = c.req.header("origin");
-      if (origin !== env.APP_URL) return c.json({ error: "bad_origin" }, 403);
+      if (origin) {
+        const normal = origin.replace(/\/+$/, "");
+        const sah = normal === env.APP_URL.replace(/\/+$/, "") || env.CORS_ORIGINS.includes(normal);
+        if (!sah) return c.json({ error: "bad_origin" }, 403);
+      }
     }
     await next();
   })
