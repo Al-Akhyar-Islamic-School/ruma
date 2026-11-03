@@ -5,7 +5,12 @@ import { alasanTidakSiap, mulaiWorker } from "./antrean.js";
 import { purgeExpiredSessions } from "./auth/session.js";
 import { closeDb } from "./db/index.js";
 import { migrasiTertinggal } from "./db/migrasi.js";
-import { env } from "./env.js";
+import { env, isProd } from "./env.js";
+
+// Khusus lingkungan lokal development: izinkan sertifikat lokal self-signed (misal Laravel Herd / Valet .test)
+if (!isProd && env.SIMGTK_API_URL?.includes(".test")) {
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+}
 
 const server = serve({ fetch: app.fetch, port: env.PORT, hostname: env.HOST }, (i) =>
   console.log(`kalam-api listening on ${i.address}:${i.port}`),
