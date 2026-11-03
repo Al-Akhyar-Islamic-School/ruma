@@ -33,7 +33,7 @@ const updatedAt = () =>
     .default(sql`CURRENT_TIMESTAMP`)
     .onUpdateNow();
 
-export const users = mysqlTable("kalam_users", {
+export const users = mysqlTable("ruma_users", {
   id: id(),
   // `sub` Google: identitas stabil; email bisa berubah.
   googleSub: varchar("google_sub", { length: 64 }).notNull().unique(),
@@ -48,7 +48,7 @@ export const users = mysqlTable("kalam_users", {
 });
 
 export const sessions = mysqlTable(
-  "kalam_sessions",
+  "ruma_sessions",
   {
     // SHA-256 hex dari token cookie; token mentah tidak pernah disimpan.
     id: char("id", { length: 64 }).primaryKey(),
@@ -74,7 +74,7 @@ export type SesiMetadata = {
 };
 
 export const sesi = mysqlTable(
-  "kalam_sesi",
+  "ruma_sesi",
   {
     id: id(),
     uuid: char("uuid", { length: 36 }).notNull().unique(),
@@ -114,7 +114,7 @@ export const sesi = mysqlTable(
 );
 
 export const audioChunks = mysqlTable(
-  "kalam_audio_chunks",
+  "ruma_audio_chunks",
   {
     id: id(),
     sesiId: ref("sesi_id")
@@ -133,7 +133,7 @@ export const PERMINTAAN_STATUS = ["menunggu", "disetujui", "ditolak"] as const;
 
 /** Permintaan membuat sesi dari user tanpa izin langsung; harus disetujui admin dengan batas durasi. */
 export const permintaanSesi = mysqlTable(
-  "kalam_permintaan_sesi",
+  "ruma_permintaan_sesi",
   {
     id: id(),
     userId: ref("user_id")
@@ -162,7 +162,7 @@ export const permintaanSesi = mysqlTable(
 
 export type Segment = { start: number; end: number; text: string };
 
-export const transkrip = mysqlTable("kalam_transkrip", {
+export const transkrip = mysqlTable("ruma_transkrip", {
   id: id(),
   sesiId: ref("sesi_id")
     .notNull()
@@ -179,7 +179,7 @@ export const transkrip = mysqlTable("kalam_transkrip", {
   (t) => [uniqueIndex("transkrip_sesi_uq").on(t.sesiId)],
 );
 
-export const dokumen = mysqlTable("kalam_dokumen", {
+export const dokumen = mysqlTable("ruma_dokumen", {
   id: id(),
   sesiId: ref("sesi_id")
     .notNull()
@@ -195,7 +195,7 @@ export const dokumen = mysqlTable("kalam_dokumen", {
   updatedAt: updatedAt(),
 });
 
-export const actionItems = mysqlTable("kalam_action_items", {
+export const actionItems = mysqlTable("ruma_action_items", {
   id: id(),
   dokumenId: ref("dokumen_id")
     .notNull()
@@ -219,7 +219,7 @@ export const UNIT = ["TK", "SD", "SMP", "SMA"] as const;
 export type Unit = (typeof UNIT)[number];
 
 /** Nama resmi guru/tenaga kependidikan per email, disalin dari SIM-GTK. Tidak harus sudah pernah login. */
-export const gtk = mysqlTable("kalam_gtk", {
+export const gtk = mysqlTable("ruma_gtk", {
   email: varchar("email", { length: 255 }).primaryKey(), // huruf kecil
   simgtkId: int("simgtk_id", { unsigned: true }),
   namaResmi: varchar("nama_resmi", { length: 255 }).notNull(),
@@ -230,7 +230,7 @@ export const gtk = mysqlTable("kalam_gtk", {
 
 /** Keanggotaan unit (hanya GTK aktif). Satu orang bisa di lebih dari satu unit. */
 export const gtkUnit = mysqlTable(
-  "kalam_gtk_unit",
+  "ruma_gtk_unit",
   {
     email: varchar("email", { length: 255 })
       .notNull()
@@ -243,7 +243,7 @@ export const gtkUnit = mysqlTable(
 // --- Grup undangan (dipakai berkali-kali) ---
 
 export const grup = mysqlTable(
-  "kalam_grup",
+  "ruma_grup",
   {
     id: id(),
     ownerId: ref("owner_id")
@@ -258,7 +258,7 @@ export const grup = mysqlTable(
 
 /** Anggota grup per email (bisa belum pernah login). */
 export const grupAnggota = mysqlTable(
-  "kalam_grup_anggota",
+  "ruma_grup_anggota",
   {
     grupId: ref("grup_id")
       .notNull()
@@ -275,7 +275,7 @@ export type TipeUndangan = (typeof TIPE_UNDANGAN)[number];
 
 /** Siapa yang boleh mendengarkan dan membaca sesi (selain perekamnya). */
 export const sesiUndangan = mysqlTable(
-  "kalam_sesi_undangan",
+  "ruma_sesi_undangan",
   {
     id: id(),
     sesiId: ref("sesi_id")
@@ -301,7 +301,7 @@ export const sesiUndangan = mysqlTable(
 );
 
 /** Pengaturan aplikasi (kunci -> nilai JSON), mis. saklar modul. Diubah superadmin lewat /admin/pengaturan. */
-export const pengaturan = mysqlTable("kalam_pengaturan", {
+export const pengaturan = mysqlTable("ruma_pengaturan", {
   kunci: varchar("kunci", { length: 64 }).primaryKey(),
   nilai: json("nilai").$type<unknown>().notNull(),
   diubahOleh: ref("diubah_oleh").references(() => users.id),
@@ -312,7 +312,7 @@ export const pengaturan = mysqlTable("kalam_pengaturan", {
  * Kategori rapat yang dikelola superadmin. `kode` stabil (disimpan di `sesi.metadata.kategori`), `nama` bisa diubah.
  * `terbatas`: rapat kategori ini hanya boleh dibuka untuk orang/grup tertentu, bukan unit/organisasi (ARCHITECTURE.md §5).
  */
-export const kategoriRapat = mysqlTable("kalam_kategori_rapat", {
+export const kategoriRapat = mysqlTable("ruma_kategori_rapat", {
   id: id(),
   kode: varchar("kode", { length: 40 }).notNull().unique(),
   nama: varchar("nama", { length: 100 }).notNull(),

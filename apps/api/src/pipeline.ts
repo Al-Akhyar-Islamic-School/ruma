@@ -23,7 +23,7 @@ const tanggalLokal = (d: Date) => new Intl.DateTimeFormat("sv-SE", { timeZone: Z
 const MIN_KARAKTER_TRANSKRIP = 20;
 
 /**
- * Tahap 1: potongan audio -> MP3 pemutar -> Whisper per bagian -> `kalam_transkrip`.
+ * Tahap 1: potongan audio -> MP3 pemutar -> Whisper per bagian -> `ruma_transkrip`.
  * Dapat dilanjutkan: MP3 dan hasil Whisper per bagian di-cache di `<uuid>/work`, jadi percobaan ulang
  * tidak menghabiskan kuota Whisper untuk bagian yang sudah selesai.
  */
@@ -112,7 +112,7 @@ export async function tahapTranskripsi(s: Sesi) {
 
 const TANGGAL_ISO = /^\d{4}-\d{2}-\d{2}$/;
 
-/** Tahap 2: transkrip -> Gemini (cadangan Llama) -> `kalam_dokumen` (+ `kalam_action_items` untuk rapat). */
+/** Tahap 2: transkrip -> Gemini (cadangan Llama) -> `ruma_dokumen` (+ `ruma_action_items` untuk rapat). */
 export async function tahapAnalisis(s: Sesi) {
   const [tr] = await db.select().from(transkrip).where(eq(transkrip.sesiId, s.id)).limit(1);
   if (!tr) throw new Error("transkrip tidak ditemukan untuk sesi ini");

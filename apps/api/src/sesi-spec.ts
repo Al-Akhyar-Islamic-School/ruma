@@ -8,7 +8,7 @@ export const sesiSpecShape = {
   judul: z.string().trim().min(1).max(255),
   metadata: z
     .object({
-      // Kode `kalam_kategori_rapat`; keberadaan dan status aktifnya dicek di rute (butuh database).
+      // Kode `ruma_kategori_rapat`; keberadaan dan status aktifnya dicek di rute (butuh database).
       kategori: z.string().trim().min(1).max(40).optional(),
       // Guru yang disupervisi dipilih dari daftar GTK (SIM-GTK) lewat email; belum tentu pernah login.
       guruEmail: emailBaku.optional(),

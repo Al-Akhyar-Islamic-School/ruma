@@ -1,11 +1,11 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "94e77bf9-7886-49a4-9a35-f41271953b5e",
+  "id": "6cdd0c2b-659c-4015-8e75-7f41a16e87d9",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
-    "kalam_action_items": {
-      "name": "kalam_action_items",
+    "ruma_action_items": {
+      "name": "ruma_action_items",
       "columns": {
         "id": {
           "name": "id",
@@ -38,6 +38,13 @@
         "pic_user_id": {
           "name": "pic_user_id",
           "type": "bigint unsigned",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "pic_email": {
+          "name": "pic_email",
+          "type": "varchar(255)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
@@ -77,10 +84,10 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "kalam_action_items_dokumen_id_kalam_dokumen_id_fk": {
-          "name": "kalam_action_items_dokumen_id_kalam_dokumen_id_fk",
-          "tableFrom": "kalam_action_items",
-          "tableTo": "kalam_dokumen",
+        "ruma_action_items_dokumen_id_ruma_dokumen_id_fk": {
+          "name": "ruma_action_items_dokumen_id_ruma_dokumen_id_fk",
+          "tableFrom": "ruma_action_items",
+          "tableTo": "ruma_dokumen",
           "columnsFrom": [
             "dokumen_id"
           ],
@@ -90,10 +97,10 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "kalam_action_items_pic_user_id_kalam_users_id_fk": {
-          "name": "kalam_action_items_pic_user_id_kalam_users_id_fk",
-          "tableFrom": "kalam_action_items",
-          "tableTo": "kalam_users",
+        "ruma_action_items_pic_user_id_ruma_users_id_fk": {
+          "name": "ruma_action_items_pic_user_id_ruma_users_id_fk",
+          "tableFrom": "ruma_action_items",
+          "tableTo": "ruma_users",
           "columnsFrom": [
             "pic_user_id"
           ],
@@ -105,8 +112,8 @@
         }
       },
       "compositePrimaryKeys": {
-        "kalam_action_items_id": {
-          "name": "kalam_action_items_id",
+        "ruma_action_items_id": {
+          "name": "ruma_action_items_id",
           "columns": [
             "id"
           ]
@@ -115,8 +122,8 @@
       "uniqueConstraints": {},
       "checkConstraint": {}
     },
-    "kalam_audio_chunks": {
-      "name": "kalam_audio_chunks",
+    "ruma_audio_chunks": {
+      "name": "ruma_audio_chunks",
       "columns": {
         "id": {
           "name": "id",
@@ -173,10 +180,10 @@
         }
       },
       "foreignKeys": {
-        "kalam_audio_chunks_sesi_id_kalam_sesi_id_fk": {
-          "name": "kalam_audio_chunks_sesi_id_kalam_sesi_id_fk",
-          "tableFrom": "kalam_audio_chunks",
-          "tableTo": "kalam_sesi",
+        "ruma_audio_chunks_sesi_id_ruma_sesi_id_fk": {
+          "name": "ruma_audio_chunks_sesi_id_ruma_sesi_id_fk",
+          "tableFrom": "ruma_audio_chunks",
+          "tableTo": "ruma_sesi",
           "columnsFrom": [
             "sesi_id"
           ],
@@ -188,8 +195,8 @@
         }
       },
       "compositePrimaryKeys": {
-        "kalam_audio_chunks_id": {
-          "name": "kalam_audio_chunks_id",
+        "ruma_audio_chunks_id": {
+          "name": "ruma_audio_chunks_id",
           "columns": [
             "id"
           ]
@@ -198,8 +205,8 @@
       "uniqueConstraints": {},
       "checkConstraint": {}
     },
-    "kalam_dokumen": {
-      "name": "kalam_dokumen",
+    "ruma_dokumen": {
+      "name": "ruma_dokumen",
       "columns": {
         "id": {
           "name": "id",
@@ -278,10 +285,10 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "kalam_dokumen_sesi_id_kalam_sesi_id_fk": {
-          "name": "kalam_dokumen_sesi_id_kalam_sesi_id_fk",
-          "tableFrom": "kalam_dokumen",
-          "tableTo": "kalam_sesi",
+        "ruma_dokumen_sesi_id_ruma_sesi_id_fk": {
+          "name": "ruma_dokumen_sesi_id_ruma_sesi_id_fk",
+          "tableFrom": "ruma_dokumen",
+          "tableTo": "ruma_sesi",
           "columnsFrom": [
             "sesi_id"
           ],
@@ -291,10 +298,10 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "kalam_dokumen_guru_target_id_kalam_users_id_fk": {
-          "name": "kalam_dokumen_guru_target_id_kalam_users_id_fk",
-          "tableFrom": "kalam_dokumen",
-          "tableTo": "kalam_users",
+        "ruma_dokumen_guru_target_id_ruma_users_id_fk": {
+          "name": "ruma_dokumen_guru_target_id_ruma_users_id_fk",
+          "tableFrom": "ruma_dokumen",
+          "tableTo": "ruma_users",
           "columnsFrom": [
             "guru_target_id"
           ],
@@ -304,10 +311,10 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "kalam_dokumen_disetujui_oleh_kalam_users_id_fk": {
-          "name": "kalam_dokumen_disetujui_oleh_kalam_users_id_fk",
-          "tableFrom": "kalam_dokumen",
-          "tableTo": "kalam_users",
+        "ruma_dokumen_disetujui_oleh_ruma_users_id_fk": {
+          "name": "ruma_dokumen_disetujui_oleh_ruma_users_id_fk",
+          "tableFrom": "ruma_dokumen",
+          "tableTo": "ruma_users",
           "columnsFrom": [
             "disetujui_oleh"
           ],
@@ -319,8 +326,8 @@
         }
       },
       "compositePrimaryKeys": {
-        "kalam_dokumen_id": {
-          "name": "kalam_dokumen_id",
+        "ruma_dokumen_id": {
+          "name": "ruma_dokumen_id",
           "columns": [
             "id"
           ]
@@ -329,8 +336,8 @@
       "uniqueConstraints": {},
       "checkConstraint": {}
     },
-    "kalam_grup": {
-      "name": "kalam_grup",
+    "ruma_grup": {
+      "name": "ruma_grup",
       "columns": {
         "id": {
           "name": "id",
@@ -381,10 +388,10 @@
         }
       },
       "foreignKeys": {
-        "kalam_grup_owner_id_kalam_users_id_fk": {
-          "name": "kalam_grup_owner_id_kalam_users_id_fk",
-          "tableFrom": "kalam_grup",
-          "tableTo": "kalam_users",
+        "ruma_grup_owner_id_ruma_users_id_fk": {
+          "name": "ruma_grup_owner_id_ruma_users_id_fk",
+          "tableFrom": "ruma_grup",
+          "tableTo": "ruma_users",
           "columnsFrom": [
             "owner_id"
           ],
@@ -396,8 +403,8 @@
         }
       },
       "compositePrimaryKeys": {
-        "kalam_grup_id": {
-          "name": "kalam_grup_id",
+        "ruma_grup_id": {
+          "name": "ruma_grup_id",
           "columns": [
             "id"
           ]
@@ -406,8 +413,8 @@
       "uniqueConstraints": {},
       "checkConstraint": {}
     },
-    "kalam_grup_anggota": {
-      "name": "kalam_grup_anggota",
+    "ruma_grup_anggota": {
+      "name": "ruma_grup_anggota",
       "columns": {
         "grup_id": {
           "name": "grup_id",
@@ -434,10 +441,10 @@
         }
       },
       "foreignKeys": {
-        "kalam_grup_anggota_grup_id_kalam_grup_id_fk": {
-          "name": "kalam_grup_anggota_grup_id_kalam_grup_id_fk",
-          "tableFrom": "kalam_grup_anggota",
-          "tableTo": "kalam_grup",
+        "ruma_grup_anggota_grup_id_ruma_grup_id_fk": {
+          "name": "ruma_grup_anggota_grup_id_ruma_grup_id_fk",
+          "tableFrom": "ruma_grup_anggota",
+          "tableTo": "ruma_grup",
           "columnsFrom": [
             "grup_id"
           ],
@@ -449,8 +456,8 @@
         }
       },
       "compositePrimaryKeys": {
-        "kalam_grup_anggota_grup_id_email_pk": {
-          "name": "kalam_grup_anggota_grup_id_email_pk",
+        "ruma_grup_anggota_grup_id_email_pk": {
+          "name": "ruma_grup_anggota_grup_id_email_pk",
           "columns": [
             "grup_id",
             "email"
@@ -460,8 +467,8 @@
       "uniqueConstraints": {},
       "checkConstraint": {}
     },
-    "kalam_gtk": {
-      "name": "kalam_gtk",
+    "ruma_gtk": {
+      "name": "ruma_gtk",
       "columns": {
         "email": {
           "name": "email",
@@ -504,8 +511,8 @@
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {
-        "kalam_gtk_email": {
-          "name": "kalam_gtk_email",
+        "ruma_gtk_email": {
+          "name": "ruma_gtk_email",
           "columns": [
             "email"
           ]
@@ -514,8 +521,8 @@
       "uniqueConstraints": {},
       "checkConstraint": {}
     },
-    "kalam_gtk_unit": {
-      "name": "kalam_gtk_unit",
+    "ruma_gtk_unit": {
+      "name": "ruma_gtk_unit",
       "columns": {
         "email": {
           "name": "email",
@@ -542,10 +549,10 @@
         }
       },
       "foreignKeys": {
-        "kalam_gtk_unit_email_kalam_gtk_email_fk": {
-          "name": "kalam_gtk_unit_email_kalam_gtk_email_fk",
-          "tableFrom": "kalam_gtk_unit",
-          "tableTo": "kalam_gtk",
+        "ruma_gtk_unit_email_ruma_gtk_email_fk": {
+          "name": "ruma_gtk_unit_email_ruma_gtk_email_fk",
+          "tableFrom": "ruma_gtk_unit",
+          "tableTo": "ruma_gtk",
           "columnsFrom": [
             "email"
           ],
@@ -557,8 +564,8 @@
         }
       },
       "compositePrimaryKeys": {
-        "kalam_gtk_unit_email_unit_pk": {
-          "name": "kalam_gtk_unit_email_unit_pk",
+        "ruma_gtk_unit_email_unit_pk": {
+          "name": "ruma_gtk_unit_email_unit_pk",
           "columns": [
             "email",
             "unit"
@@ -568,8 +575,155 @@
       "uniqueConstraints": {},
       "checkConstraint": {}
     },
-    "kalam_permintaan_sesi": {
-      "name": "kalam_permintaan_sesi",
+    "ruma_kategori_rapat": {
+      "name": "ruma_kategori_rapat",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint unsigned",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "kode": {
+          "name": "kode",
+          "type": "varchar(40)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "nama": {
+          "name": "nama",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "terbatas": {
+          "name": "terbatas",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
+        },
+        "aktif": {
+          "name": "aktif",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": true
+        },
+        "urutan": {
+          "name": "urutan",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "onUpdate": true,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "ruma_kategori_rapat_id": {
+          "name": "ruma_kategori_rapat_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {
+        "ruma_kategori_rapat_kode_unique": {
+          "name": "ruma_kategori_rapat_kode_unique",
+          "columns": [
+            "kode"
+          ]
+        }
+      },
+      "checkConstraint": {}
+    },
+    "ruma_pengaturan": {
+      "name": "ruma_pengaturan",
+      "columns": {
+        "kunci": {
+          "name": "kunci",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "nilai": {
+          "name": "nilai",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "diubah_oleh": {
+          "name": "diubah_oleh",
+          "type": "bigint unsigned",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "onUpdate": true,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "ruma_pengaturan_diubah_oleh_ruma_users_id_fk": {
+          "name": "ruma_pengaturan_diubah_oleh_ruma_users_id_fk",
+          "tableFrom": "ruma_pengaturan",
+          "tableTo": "ruma_users",
+          "columnsFrom": [
+            "diubah_oleh"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "ruma_pengaturan_kunci": {
+          "name": "ruma_pengaturan_kunci",
+          "columns": [
+            "kunci"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "ruma_permintaan_sesi": {
+      "name": "ruma_permintaan_sesi",
       "columns": {
         "id": {
           "name": "id",
@@ -706,10 +860,10 @@
         }
       },
       "foreignKeys": {
-        "kalam_permintaan_sesi_user_id_kalam_users_id_fk": {
-          "name": "kalam_permintaan_sesi_user_id_kalam_users_id_fk",
-          "tableFrom": "kalam_permintaan_sesi",
-          "tableTo": "kalam_users",
+        "ruma_permintaan_sesi_user_id_ruma_users_id_fk": {
+          "name": "ruma_permintaan_sesi_user_id_ruma_users_id_fk",
+          "tableFrom": "ruma_permintaan_sesi",
+          "tableTo": "ruma_users",
           "columnsFrom": [
             "user_id"
           ],
@@ -719,10 +873,10 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "kalam_permintaan_sesi_diputuskan_oleh_kalam_users_id_fk": {
-          "name": "kalam_permintaan_sesi_diputuskan_oleh_kalam_users_id_fk",
-          "tableFrom": "kalam_permintaan_sesi",
-          "tableTo": "kalam_users",
+        "ruma_permintaan_sesi_diputuskan_oleh_ruma_users_id_fk": {
+          "name": "ruma_permintaan_sesi_diputuskan_oleh_ruma_users_id_fk",
+          "tableFrom": "ruma_permintaan_sesi",
+          "tableTo": "ruma_users",
           "columnsFrom": [
             "diputuskan_oleh"
           ],
@@ -732,10 +886,10 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "kalam_permintaan_sesi_sesi_id_kalam_sesi_id_fk": {
-          "name": "kalam_permintaan_sesi_sesi_id_kalam_sesi_id_fk",
-          "tableFrom": "kalam_permintaan_sesi",
-          "tableTo": "kalam_sesi",
+        "ruma_permintaan_sesi_sesi_id_ruma_sesi_id_fk": {
+          "name": "ruma_permintaan_sesi_sesi_id_ruma_sesi_id_fk",
+          "tableFrom": "ruma_permintaan_sesi",
+          "tableTo": "ruma_sesi",
           "columnsFrom": [
             "sesi_id"
           ],
@@ -747,16 +901,16 @@
         }
       },
       "compositePrimaryKeys": {
-        "kalam_permintaan_sesi_id": {
-          "name": "kalam_permintaan_sesi_id",
+        "ruma_permintaan_sesi_id": {
+          "name": "ruma_permintaan_sesi_id",
           "columns": [
             "id"
           ]
         }
       },
       "uniqueConstraints": {
-        "kalam_permintaan_sesi_sesi_id_unique": {
-          "name": "kalam_permintaan_sesi_sesi_id_unique",
+        "ruma_permintaan_sesi_sesi_id_unique": {
+          "name": "ruma_permintaan_sesi_sesi_id_unique",
           "columns": [
             "sesi_id"
           ]
@@ -764,8 +918,8 @@
       },
       "checkConstraint": {}
     },
-    "kalam_sesi": {
-      "name": "kalam_sesi",
+    "ruma_sesi": {
+      "name": "ruma_sesi",
       "columns": {
         "id": {
           "name": "id",
@@ -890,6 +1044,20 @@
           "notNull": false,
           "autoincrement": false
         },
+        "progres_selesai": {
+          "name": "progres_selesai",
+          "type": "int unsigned",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "progres_total": {
+          "name": "progres_total",
+          "type": "int unsigned",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -927,10 +1095,10 @@
         }
       },
       "foreignKeys": {
-        "kalam_sesi_user_id_kalam_users_id_fk": {
-          "name": "kalam_sesi_user_id_kalam_users_id_fk",
-          "tableFrom": "kalam_sesi",
-          "tableTo": "kalam_users",
+        "ruma_sesi_user_id_ruma_users_id_fk": {
+          "name": "ruma_sesi_user_id_ruma_users_id_fk",
+          "tableFrom": "ruma_sesi",
+          "tableTo": "ruma_users",
           "columnsFrom": [
             "user_id"
           ],
@@ -942,16 +1110,16 @@
         }
       },
       "compositePrimaryKeys": {
-        "kalam_sesi_id": {
-          "name": "kalam_sesi_id",
+        "ruma_sesi_id": {
+          "name": "ruma_sesi_id",
           "columns": [
             "id"
           ]
         }
       },
       "uniqueConstraints": {
-        "kalam_sesi_uuid_unique": {
-          "name": "kalam_sesi_uuid_unique",
+        "ruma_sesi_uuid_unique": {
+          "name": "ruma_sesi_uuid_unique",
           "columns": [
             "uuid"
           ]
@@ -959,8 +1127,8 @@
       },
       "checkConstraint": {}
     },
-    "kalam_sesi_undangan": {
-      "name": "kalam_sesi_undangan",
+    "ruma_sesi_undangan": {
+      "name": "ruma_sesi_undangan",
       "columns": {
         "id": {
           "name": "id",
@@ -1052,10 +1220,10 @@
         }
       },
       "foreignKeys": {
-        "kalam_sesi_undangan_sesi_id_kalam_sesi_id_fk": {
-          "name": "kalam_sesi_undangan_sesi_id_kalam_sesi_id_fk",
-          "tableFrom": "kalam_sesi_undangan",
-          "tableTo": "kalam_sesi",
+        "ruma_sesi_undangan_sesi_id_ruma_sesi_id_fk": {
+          "name": "ruma_sesi_undangan_sesi_id_ruma_sesi_id_fk",
+          "tableFrom": "ruma_sesi_undangan",
+          "tableTo": "ruma_sesi",
           "columnsFrom": [
             "sesi_id"
           ],
@@ -1065,10 +1233,10 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "kalam_sesi_undangan_grup_id_kalam_grup_id_fk": {
-          "name": "kalam_sesi_undangan_grup_id_kalam_grup_id_fk",
-          "tableFrom": "kalam_sesi_undangan",
-          "tableTo": "kalam_grup",
+        "ruma_sesi_undangan_grup_id_ruma_grup_id_fk": {
+          "name": "ruma_sesi_undangan_grup_id_ruma_grup_id_fk",
+          "tableFrom": "ruma_sesi_undangan",
+          "tableTo": "ruma_grup",
           "columnsFrom": [
             "grup_id"
           ],
@@ -1078,10 +1246,10 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "kalam_sesi_undangan_dibuat_oleh_kalam_users_id_fk": {
-          "name": "kalam_sesi_undangan_dibuat_oleh_kalam_users_id_fk",
-          "tableFrom": "kalam_sesi_undangan",
-          "tableTo": "kalam_users",
+        "ruma_sesi_undangan_dibuat_oleh_ruma_users_id_fk": {
+          "name": "ruma_sesi_undangan_dibuat_oleh_ruma_users_id_fk",
+          "tableFrom": "ruma_sesi_undangan",
+          "tableTo": "ruma_users",
           "columnsFrom": [
             "dibuat_oleh"
           ],
@@ -1093,8 +1261,8 @@
         }
       },
       "compositePrimaryKeys": {
-        "kalam_sesi_undangan_id": {
-          "name": "kalam_sesi_undangan_id",
+        "ruma_sesi_undangan_id": {
+          "name": "ruma_sesi_undangan_id",
           "columns": [
             "id"
           ]
@@ -1103,8 +1271,8 @@
       "uniqueConstraints": {},
       "checkConstraint": {}
     },
-    "kalam_sessions": {
-      "name": "kalam_sessions",
+    "ruma_sessions": {
+      "name": "ruma_sessions",
       "columns": {
         "id": {
           "name": "id",
@@ -1153,10 +1321,10 @@
         }
       },
       "foreignKeys": {
-        "kalam_sessions_user_id_kalam_users_id_fk": {
-          "name": "kalam_sessions_user_id_kalam_users_id_fk",
-          "tableFrom": "kalam_sessions",
-          "tableTo": "kalam_users",
+        "ruma_sessions_user_id_ruma_users_id_fk": {
+          "name": "ruma_sessions_user_id_ruma_users_id_fk",
+          "tableFrom": "ruma_sessions",
+          "tableTo": "ruma_users",
           "columnsFrom": [
             "user_id"
           ],
@@ -1168,8 +1336,8 @@
         }
       },
       "compositePrimaryKeys": {
-        "kalam_sessions_id": {
-          "name": "kalam_sessions_id",
+        "ruma_sessions_id": {
+          "name": "ruma_sessions_id",
           "columns": [
             "id"
           ]
@@ -1178,8 +1346,8 @@
       "uniqueConstraints": {},
       "checkConstraint": {}
     },
-    "kalam_transkrip": {
-      "name": "kalam_transkrip",
+    "ruma_transkrip": {
+      "name": "ruma_transkrip",
       "columns": {
         "id": {
           "name": "id",
@@ -1244,10 +1412,10 @@
         }
       },
       "foreignKeys": {
-        "kalam_transkrip_sesi_id_kalam_sesi_id_fk": {
-          "name": "kalam_transkrip_sesi_id_kalam_sesi_id_fk",
-          "tableFrom": "kalam_transkrip",
-          "tableTo": "kalam_sesi",
+        "ruma_transkrip_sesi_id_ruma_sesi_id_fk": {
+          "name": "ruma_transkrip_sesi_id_ruma_sesi_id_fk",
+          "tableFrom": "ruma_transkrip",
+          "tableTo": "ruma_sesi",
           "columnsFrom": [
             "sesi_id"
           ],
@@ -1259,8 +1427,8 @@
         }
       },
       "compositePrimaryKeys": {
-        "kalam_transkrip_id": {
-          "name": "kalam_transkrip_id",
+        "ruma_transkrip_id": {
+          "name": "ruma_transkrip_id",
           "columns": [
             "id"
           ]
@@ -1269,8 +1437,8 @@
       "uniqueConstraints": {},
       "checkConstraint": {}
     },
-    "kalam_users": {
-      "name": "kalam_users",
+    "ruma_users": {
+      "name": "ruma_users",
       "columns": {
         "id": {
           "name": "id",
@@ -1343,22 +1511,22 @@
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {
-        "kalam_users_id": {
-          "name": "kalam_users_id",
+        "ruma_users_id": {
+          "name": "ruma_users_id",
           "columns": [
             "id"
           ]
         }
       },
       "uniqueConstraints": {
-        "kalam_users_google_sub_unique": {
-          "name": "kalam_users_google_sub_unique",
+        "ruma_users_google_sub_unique": {
+          "name": "ruma_users_google_sub_unique",
           "columns": [
             "google_sub"
           ]
         },
-        "kalam_users_email_unique": {
-          "name": "kalam_users_email_unique",
+        "ruma_users_email_unique": {
+          "name": "ruma_users_email_unique",
           "columns": [
             "email"
           ]

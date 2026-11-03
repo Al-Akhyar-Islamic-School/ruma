@@ -8,7 +8,7 @@ import { filterModul } from "./pengaturan.js";
  * (orang, grup, unit, seluruh organisasi). Dipakai di tiap query yang membaca sesi.
  *
  * Hanya untuk query core builder (`db.select().from(sesi)`). Query relasional (`db.query.sesi`) memberi alias
- * pada tabel sehingga referensi terkorelasi `kalam_sesi.id` gagal ("Unknown column").
+ * pada tabel sehingga referensi terkorelasi `ruma_sesi.id` gagal ("Unknown column").
  */
 export function diundang(user: Pick<User, "email">) {
   const email = user.email.toLowerCase();

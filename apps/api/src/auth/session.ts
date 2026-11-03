@@ -7,7 +7,7 @@ import { db } from "../db/index.js";
 import { sessions, users, type Role, type User } from "../db/schema.js";
 import { isProd } from "../env.js";
 
-export const SESSION_COOKIE = "kalam_session";
+export const SESSION_COOKIE = "ruma_session";
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 const hash = (token: string) => createHash("sha256").update(token).digest("hex");

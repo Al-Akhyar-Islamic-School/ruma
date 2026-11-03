@@ -1,1 +1,0 @@
-ALTER TABLE `kalam_action_items` ADD `pic_email` varchar(255);

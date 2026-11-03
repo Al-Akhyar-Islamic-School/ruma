@@ -39,7 +39,7 @@ export const grupRoutes = new Hono<AuthEnv>()
         id: grup.id,
         nama: grup.nama,
         pemilik: users.name,
-        jumlahAnggota: sql<number>`(select count(*) from kalam_grup_anggota ga where ga.grup_id = ${grup.id})`.mapWith(Number),
+        jumlahAnggota: sql<number>`(select count(*) from ruma_grup_anggota ga where ga.grup_id = ${grup.id})`.mapWith(Number),
       })
       .from(grupAnggota)
       .innerJoin(grup, eq(grup.id, grupAnggota.grupId))
