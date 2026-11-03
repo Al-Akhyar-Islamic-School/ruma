@@ -60,7 +60,7 @@ export function IsiSesi({ sesi }: { sesi: DetailSesi }) {
 
   return (
     <div className={cn("space-y-4", adaAudio && RUANG_BILAH_PEMUTAR)}>
-      <KepalaSesi sesi={sesi} bisaSetujui={draf} onUndang={() => setUndang(true)} />
+      <KepalaSesi sesi={sesi} bisaSetujui={draf} statusDokumen={dokumen?.statusVerifikasi} onUndang={() => setUndang(true)} />
 
       <StatusPemrosesan
         status={status}

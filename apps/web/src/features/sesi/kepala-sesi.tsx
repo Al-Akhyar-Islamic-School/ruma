@@ -12,10 +12,12 @@ import type { DetailSesi } from "./queries";
 export function KepalaSesi({
   sesi,
   bisaSetujui,
+  statusDokumen,
   onUndang,
 }: {
   sesi: DetailSesi;
   bisaSetujui: boolean;
+  statusDokumen?: "draf" | "disetujui" | null;
   onUndang: () => void;
 }) {
   const daftarKategori = useKategori();
@@ -59,7 +61,7 @@ export function KepalaSesi({
             Undang
           </Button>
           {bisaSetujui && <SetujuiDokumen uuid={sesi.uuid} />}
-          {sesi.tipeSesi === "rapat" && !bisaSetujui && <TombolGoogleDocs uuid={sesi.uuid} />}
+          {sesi.tipeSesi === "rapat" && statusDokumen === "disetujui" && <TombolGoogleDocs uuid={sesi.uuid} />}
         </div>
       )}
     </header>
