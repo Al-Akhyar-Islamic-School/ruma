@@ -76,7 +76,8 @@ kalam-ai/
 ├── PRD.md                  # Product Requirements Document (fitur detail)
 ├── ARCHITECTURE.md         # Blueprint teknis, skema DB, pipeline data
 ├── apps/
-│   └── api/                # Backend: Hono (Node 22) + Drizzle + MySQL, login Google Workspace
+│   ├── api/                # Backend: Hono (Node 22) + Drizzle + MySQL, login Google Workspace
+│   └── web/                # PWA: React 19 + TanStack Router/Query + shadcn/ui (Vite)
 └── docs/
     ├── pipeline-audio.md   # Detail kompresi Opus, chunking, Whisper API
     ├── rubrik-supervisi.md # Standar indikator observasi kelas Kurikulum Merdeka
@@ -171,4 +172,26 @@ finish -> status mentranskrip -> [tahap 1] -> menganalisis -> [tahap 2] -> seles
 - Hasil (semuanya lewat `findReadable`): `GET /sesi/:uuid/transkrip`, `GET /sesi/:uuid/dokumen`, `GET /sesi/:uuid/audio` (MP3, mendukung `Range`).
 - Dokumen berstatus `draf` hanya terlihat oleh perekam dan superadmin; `POST /sesi/:uuid/dokumen/setujui` (perekam) membukanya untuk yang diundang. Transkrip dan audio terlihat oleh yang diundang segera setelah selesai.
 - Kontrak keluaran rapat mengikuti `docs/prompt-notulensi.md` (bukan ARCHITECTURE.md §4.1, yang bentuknya berbeda). Prompt supervisi (`src/ai/prompts.ts`) diturunkan dari PRD FR-07..09 karena `docs/rubrik-supervisi.md` belum ada: makna skala 1-4 perlu ditinjau kepala sekolah.
+- **PIC action items**: perekam menandai penanggung jawab tiap tugas dari direktori GTK lewat `PATCH /sesi/:uuid/tugas/:id` `{pic_email}` (null = lepas). Kolom `pic_email` + `pic_user_id` (terisi bila orangnya sudah pernah login); `pic_nama` tetap teks asli dari AI. Respons memuat `bisaMembaca`: `false` berarti yang ditandai belum bisa membaca rekaman (belum diundang), UI menawarkan undangan, tidak mengundang otomatis.
+- **Momen penting** (PRD FR-04): `penanda_detik` pada `finish` disimpan di `metadata.penanda` dan diteruskan ke prompt sebagai `momen_penting`.
+- `GET /gtk?cari=` (login, min. 2 huruf) mencari direktori GTK untuk pemilih guru/PIC/undangan.
+- Migrasi database bersifat inkremental (`drizzle/0000…` sampai `0002…`). Jangan generate ulang dari nol pada database yang sudah berjalan: jalankan `pnpm db:generate` lalu `pnpm db:migrate`.
+- **Saklar modul supervisi** (`kalam_pengaturan`, kunci `modul_supervisi`): **mati secara default**. Hanya superadmin yang mengubahnya (`GET/PATCH /admin/pengaturan`, UI: Admin → Pengaturan). Saat mati, server menolak membuat sesi/permintaan supervisi (403 `modul_nonaktif`) dan menyembunyikan semua sesi dan permintaan supervisi dari **semua** endpoint (daftar, detail, transkrip, audio, antrean admin, semua sesi), termasuk untuk superadmin. Datanya tidak dihapus dan muncul lagi saat dinyalakan; rekaman supervisi yang sudah diunggah tetap selesai diproses worker. `GET /auth/me` memuat `modul.supervisi` supaya UI menyembunyikan kontrolnya. Penegakan ada di `src/pengaturan.ts` (`filterModul`) dan dipakai `findOwn`/`findReadable`.
 - Perhatian: `node --env-file` **tidak menimpa** variabel yang sudah ada di shell. Jika shell Anda meng-export `DATABASE_URL` global, nilainya mengalahkan `.env`.
+
+## 6. Web (`apps/web`)
+
+PWA mobile-first: React 19, TypeScript, Vite, Tailwind v4, **shadcn/ui** (token warna dan font dari `DESIGN.md`), **TanStack Router** (file-based) + **TanStack Query**, klien Hono bertipe (`AppType` dari `@kalam/api`), `idb` untuk penyimpanan lokal. Monorepo pnpm: `pnpm install` di root.
+
+```bash
+pnpm install                                     # di root repo
+pnpm --filter @kalam/api dev                     # API :3000 (apps/api/.env)
+cp apps/web/.env.example apps/web/.env           # VITE_API_URL=http://localhost:3000
+pnpm --filter @kalam/web dev                     # web :5173
+pnpm --filter @kalam/web build                   # produksi + service worker PWA
+```
+
+- `APP_URL` di `apps/api/.env` harus persis sama dengan origin web (mis. `http://localhost:5173`); API memakainya untuk CORS dan menolak mutasi dari origin lain. Cookie sesi same-site, jadi web dan API boleh beda port/subdomain.
+- Layar: login Google, beranda (rekaman saya / dibagikan), setup + perekam live (offline-first: tiap potongan 30 dtk disimpan di IndexedDB sebelum diunggah; pemulihan setelah crash; batas durasi persetujuan ditegakkan), halaman hasil (notulen/lembar observasi, tugas + tag PIC, transkrip interaktif dengan pemutar audio, setujui dokumen, undangan), grup undangan, permintaan rekaman, dan area admin (permintaan, pengguna, antrean, GTK, semua sesi untuk superadmin).
+- Mikrofon di browser hanya jalan di **HTTPS** (atau `localhost`).
+- Belum ada: ekspor PDF/Word, WhatsApp pengingat tugas, tanda tangan, kuota AI (endpoint belum ada).
