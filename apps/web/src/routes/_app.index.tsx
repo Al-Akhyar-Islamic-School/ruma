@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { MicIcon } from "lucide-react";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { EmptyState, ErrorNotice, ListSkeleton } from "@/components/app/feedback";
 import { SesiCard, type SesiRingkas } from "@/components/app/sesi-card";
@@ -29,7 +28,7 @@ function Beranda() {
   const hitung = (f: Filter) => (f === "semua" ? semua.length : semua.filter((s) => s.tipeSesi === f).length);
 
   return (
-    <div className="space-y-4 pb-44">
+    <div className="space-y-4">
       <PemulihanBanner />
       <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
         <TabsList className="grid w-full grid-cols-2">
@@ -94,24 +93,6 @@ function Beranda() {
           ))}
         </ul>
       )}
-
-      <TombolRekam bisa={me.bisaBuatSesiLangsung} />
-    </div>
-  );
-}
-
-/** Tombol rekam mengambang 72px di zona jempol (DESIGN.md Layar 1). */
-function TombolRekam({ bisa }: { bisa: boolean }) {
-  return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-20 flex justify-center bg-gradient-to-t from-background via-background/90 to-transparent pb-[max(1rem,env(safe-area-inset-bottom))] pt-10">
-      <Button asChild variant="ghost" className="pointer-events-auto h-auto flex-col gap-1.5 rounded-none bg-transparent p-0 hover:bg-transparent">
-        <Link to={bisa ? "/rekam/baru" : "/permintaan"}>
-          <span className="grid size-[72px] place-items-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 ring-4 ring-background transition-transform active:scale-95">
-            <MicIcon className="size-8" aria-hidden />
-          </span>
-          <span className="text-sm font-semibold text-foreground">{bisa ? "Mulai rekaman" : "Ajukan rekaman"}</span>
-        </Link>
-      </Button>
     </div>
   );
 }

@@ -13,6 +13,7 @@ import { hapusCadanganMe, type Me, meQuery, useMe } from "@/lib/auth";
 import { setTema, type Tema, useTema } from "@/lib/theme";
 import { toast } from "sonner";
 
+import { BottomNav } from "./bottom-nav";
 export const ROLE_LABEL: Record<Me["role"], string> = {
   superadmin: "Super admin",
   admin: "Admin",
@@ -57,9 +58,10 @@ export function Shell() {
           </button>
         </div>
       </header>
-      <main className="mx-auto max-w-3xl px-4 py-4">
+      <main className="mx-auto max-w-3xl px-4 pt-4 pb-24">
         <Outlet />
       </main>
+      <BottomNav me={me} onOpenMenu={() => setMenu(true)} />
       <MenuSamping open={menu} onClose={() => setMenu(false)} me={me} />
     </div>
   );
