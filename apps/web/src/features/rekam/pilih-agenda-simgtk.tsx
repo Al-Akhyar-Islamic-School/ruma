@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { CalendarCheck2Icon, CalendarIcon, LinkIcon, Loader2Icon } from "lucide-react";
+import { CalendarCheck2Icon, CalendarIcon, ClockIcon, LinkIcon, Loader2Icon, MapPinIcon, UsersIcon } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -95,11 +95,11 @@ export function PilihAgendaSimgtk({
         </div>
       ) : isPending ? (
         <p className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Loader2Icon className="size-3.5 animate-spin" /> Memeriksa agenda hari ini...
+          <Loader2Icon className="size-3.5 animate-spin" /> Memeriksa agenda rapat SIMGTK...
         </p>
       ) : daftar && daftar.length > 0 ? (
         <div className="space-y-1.5">
-          <p className="text-xs text-muted-foreground">Pilih agenda rapat hari ini untuk mengisi otomatis:</p>
+          <p className="text-xs text-muted-foreground">Pilih agenda rapat terdekat untuk mengisi otomatis:</p>
           <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto">
             {daftar.map((a: any) => (
               <button
@@ -109,15 +109,29 @@ export function PilihAgendaSimgtk({
                 className="flex flex-col text-left p-2.5 rounded-xl border bg-card hover:bg-primary/10 transition-colors"
               >
                 <span className="text-xs font-bold text-foreground line-clamp-1">{a.judul}</span>
-                <span className="text-[11px] text-muted-foreground flex items-center gap-2 mt-0.5">
-                  <span>📅 {a.tanggal}</span>
-                  {a.jam_mulai && <span>⏰ {a.jam_mulai}</span>}
-                  {a.tempat && <span>📍 {a.tempat}</span>}
+                <span className="text-[11px] text-muted-foreground flex flex-wrap items-center gap-x-2.5 gap-y-1 mt-1">
+                  <span className="inline-flex items-center gap-1">
+                    <CalendarIcon className="size-3 text-muted-foreground" aria-hidden />
+                    {a.tanggal}
+                  </span>
+                  {a.jam_mulai && (
+                    <span className="inline-flex items-center gap-1">
+                      <ClockIcon className="size-3 text-muted-foreground" aria-hidden />
+                      {a.jam_mulai}
+                    </span>
+                  )}
+                  {a.tempat && (
+                    <span className="inline-flex items-center gap-1">
+                      <MapPinIcon className="size-3 text-muted-foreground" aria-hidden />
+                      {a.tempat}
+                    </span>
+                  )}
                   {a.unit && <span className="font-semibold text-primary">[{a.unit}]</span>}
                 </span>
                 {a.pesertas && a.pesertas.length > 0 && (
-                  <span className="text-[10px] text-muted-foreground mt-1 line-clamp-1">
-                    👥 {a.pesertas.length} peserta akan diundang otomatis
+                  <span className="text-[11px] text-muted-foreground mt-1.5 flex items-center gap-1.5">
+                    <UsersIcon className="size-3.5 text-primary" aria-hidden />
+                    <span>{a.pesertas.length} peserta akan diundang otomatis</span>
                   </span>
                 )}
               </button>
@@ -126,7 +140,7 @@ export function PilihAgendaSimgtk({
         </div>
       ) : (
         <p className="text-xs text-muted-foreground">
-          Tidak ada jadwal rapat Anda hari ini di SIMGTK. Gunakan "Tempel tautan agenda" jika ingin menautkan rapat lain.
+          Tidak ada jadwal rapat Anda dalam 7 hari ke depan di SIMGTK. Gunakan "Tempel tautan agenda" jika ingin menautkan rapat lain.
         </p>
       )}
     </Card>

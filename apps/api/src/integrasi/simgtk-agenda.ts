@@ -60,7 +60,12 @@ function simgtkHeaders(): HeadersInit {
 export async function ambilAgendaRapatSimgtk(emailUser: string): Promise<AgendaRapatSimgtk[]> {
   if (!env.SIMGTK_API_URL || !env.SIMGTK_TOKEN) return [];
 
-  const url = `${env.SIMGTK_API_URL}/integrasi/agenda-rapat?email=${encodeURIComponent(emailUser)}&hari_ini=1`;
+  const hariIni = new Date();
+  const tujuhHariLagi = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const dari = hariIni.toISOString().slice(0, 10);
+  const sampai = tujuhHariLagi.toISOString().slice(0, 10);
+  // Ambil agenda rapat dari hari ini sampai 7 hari ke depan agar rapat besok / lusa tetap terlihat
+  const url = `${env.SIMGTK_API_URL}/integrasi/agenda-rapat?email=${encodeURIComponent(emailUser)}&dari=${dari}&sampai=${sampai}`;
   try {
     const res = await fetch(url, {
       headers: simgtkHeaders(),
@@ -103,6 +108,15 @@ export async function ambilDetailAgendaSimgtk(
       signal: AbortSignal.timeout(10_000),
     });
     if (!res.ok) {
+      // Jika 404, bisa jadi ID tersebut adalah ID template rapat berulang (induk_agenda_id).
+      // Coba cari rentang tanggal luas untuk menemukan sesi rapat aktualnya
+      const urlRange = `${env.SIMGTK_API_URL}/integrasi/agenda-rapat?dari=${new Date().toISOString().slice(0, 10)}&email=${encodeURIComponent(emailUser)}`;
+      const resRange = await fetch(urlRange, { headers: simgtkHeaders(), signal: AbortSignal.timeout(10_000) });
+      if (resRange.ok) {
+        const jsonRange = (await resRange.json()) as { data?: AgendaRapatSimgtk[] };
+        const found = (jsonRange.data || []).find((a) => String(a.id) === id);
+        if (found) return found;
+      }
       return null;
     }
     const json = (await res.json()) as { data?: AgendaRapatSimgtk } | AgendaRapatSimgtk;

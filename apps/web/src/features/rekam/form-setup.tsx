@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { LoaderCircleIcon, MicIcon, MicOffIcon } from "lucide-react";
+import { LoaderCircleIcon, MicIcon, MicOffIcon, PlusIcon, UsersIcon, XIcon } from "lucide-react";
 import { type FormEvent, useMemo, useState } from "react";
 import { EmptyState } from "@/components/app/feedback";
 import { Segmented } from "@/components/app/segmented";
@@ -55,6 +55,17 @@ function FormSetup({ userId, supervisiAktif }: { userId: number; supervisiAktif:
     queryKey: ["seri"],
     queryFn: async () => ok(await api.seri.$get()),
     staleTime: 60_000,
+  });
+  const [bukaBuatSeri, setBukaBuatSeri] = useState(false);
+  const [namaSeriBaru, setNamaSeriBaru] = useState("");
+  const buatSeri = useMutation({
+    mutationFn: async () => ok(await api.seri.$post({ json: { nama: namaSeriBaru.trim() } })),
+    onSuccess: (res) => {
+      void qc.invalidateQueries({ queryKey: ["seri"] });
+      setSeriId(String(res.id));
+      setNamaSeriBaru("");
+      setBukaBuatSeri(false);
+    },
   });
   const [agendaSimgtk, setAgendaSimgtk] = useState<AgendaPilihan | null>(null);
   const [guru, setGuru] = useState<OrangGtk | null>(null);
@@ -208,6 +219,43 @@ function FormSetup({ userId, supervisiAktif }: { userId: number; supervisiAktif:
             }}
           />
 
+          {agendaSimgtk && agendaSimgtk.pesertas && agendaSimgtk.pesertas.length > 0 && (
+            <div className="rounded-2xl border border-primary/20 bg-primary/5 p-3.5 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-1.5 text-xs font-semibold text-primary">
+                  <UsersIcon className="size-4" /> Undangan Peserta Rapat ({agendaSimgtk.pesertas.length})
+                </span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="xs"
+                  onClick={() => setAgendaSimgtk(null)}
+                  className="h-auto p-0 text-xs text-muted-foreground hover:text-foreground"
+                >
+                  <XIcon className="size-3.5 mr-0.5" /> Batalkan tautan
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {agendaSimgtk.pesertas.slice(0, 5).map((p) => (
+                  <span
+                    key={p.user_id}
+                    className="inline-flex items-center rounded-lg border bg-card px-2.5 py-1 text-xs font-medium text-foreground"
+                  >
+                    {p.nama}
+                  </span>
+                ))}
+                {agendaSimgtk.pesertas.length > 5 && (
+                  <span className="inline-flex items-center rounded-lg border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary">
+                    +{agendaSimgtk.pesertas.length - 5} lainnya
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-muted-foreground pt-0.5">
+                Peserta di atas otomatis diundang ke sesi ini dan otomatis dibagikan Google Docs saat selesai.
+              </p>
+            </div>
+          )}
+
           <div className="space-y-2">
             <Label htmlFor="rekam-judul-rapat">Judul rapat</Label>
             <Input
@@ -237,7 +285,18 @@ function FormSetup({ userId, supervisiAktif }: { userId: number; supervisiAktif:
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="rekam-seri">Bagian dari Seri Rapat? (Opsional)</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="rekam-seri">Bagian dari Seri Rapat? (Opsional)</Label>
+              <Button
+                type="button"
+                variant="link"
+                size="xs"
+                onClick={() => setBukaBuatSeri(true)}
+                className="h-auto p-0 text-xs text-primary underline"
+              >
+                + Buat seri baru
+              </Button>
+            </div>
             <Select value={seriId} onValueChange={setSeriId}>
               <SelectTrigger id="rekam-seri" className="w-full data-[size=default]:h-12 rounded-xl">
                 <SelectValue placeholder="Pilih Seri Rapat" />
@@ -255,6 +314,39 @@ function FormSetup({ userId, supervisiAktif }: { userId: number; supervisiAktif:
               Rapat serial akan otomatis menyambung di berkas Google Docs yang sama (halaman baru per pertemuan).
             </p>
           </div>
+
+          {bukaBuatSeri && (
+            <div className="rounded-xl border bg-muted/30 p-3 space-y-2">
+              <Label htmlFor="nama-seri-baru" className="text-xs font-semibold">Nama Seri Rapat Baru</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="nama-seri-baru"
+                  value={namaSeriBaru}
+                  onChange={(e) => setNamaSeriBaru(e.target.value)}
+                  placeholder="Mis. Rapat Koordinasi Mingguan Pimpinan"
+                  className="h-10 text-xs bg-background"
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={buatSeri.isPending || !namaSeriBaru.trim()}
+                  onClick={() => buatSeri.mutate()}
+                  className="h-10 text-xs"
+                >
+                  {buatSeri.isPending ? "Menyimpan…" : "Simpan"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => { setBukaBuatSeri(false); setNamaSeriBaru(""); }}
+                  className="h-10 text-xs"
+                >
+                  Batal
+                </Button>
+              </div>
+            </div>
+          )}
         </>
       )}
 
