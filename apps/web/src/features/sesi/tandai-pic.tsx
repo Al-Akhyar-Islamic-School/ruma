@@ -37,8 +37,8 @@ export function TandaiPicSheet({
   const adaSaran = kataSaran.length >= MIN_HURUF_SARAN;
 
   const saran = useQuery({
-    queryKey: ["gtk", kataSaran],
-    queryFn: async () => ok(await api.gtk.$get({ query: { cari: kataSaran } })),
+    queryKey: ["gtk", "semua", kataSaran],
+    queryFn: async () => ok(await api.gtk.orang.$get({ query: { cari: kataSaran } })),
     enabled: open && adaSaran,
   });
 
@@ -106,7 +106,7 @@ export function TandaiPicSheet({
             </p>
           ) : saran.data.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              Tidak ada GTK yang cocok dengan "{tugas?.picNama}". Cari manual di bawah.
+              Tidak ada orang yang cocok dengan "{tugas?.picNama}". Cari manual di bawah.
             </p>
           ) : (
             <ul className="space-y-2">
@@ -121,7 +121,7 @@ export function TandaiPicSheet({
                     <span className="font-medium leading-snug">{o.namaResmi}</span>
                     <span className="truncate text-xs text-muted-foreground">
                       {o.email}
-                      {o.units.length > 0 && ` · ${o.units.join(", ")}`}
+                      {o.units.length > 0 ? ` · ${o.units.join(", ")}` : o.sumber === "pengguna" ? " · Pengguna" : ""}
                     </span>
                   </button>
                 </li>
@@ -132,7 +132,7 @@ export function TandaiPicSheet({
 
         <PilihOrang
           label="Cari orang lain"
-          placeholder="Cari nama atau email GTK"
+          placeholder="Cari nama atau email"
           value={manual}
           onChange={pilih}
         />

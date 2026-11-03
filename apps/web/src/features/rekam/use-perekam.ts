@@ -23,7 +23,7 @@ type SesiMedia = { recorder: MediaRecorder; stream: MediaStream; ctx: AudioConte
 const POTONGAN_MS = 30_000;
 const BITRATE = 32_000;
 
-function pesanMikrofon(e: unknown): string {
+export function pesanMikrofon(e: unknown): string {
   const nama = e instanceof DOMException ? e.name : "";
   if (nama === "NotAllowedError" || nama === "SecurityError") {
     return "Izin mikrofon ditolak. Izinkan mikrofon untuk ruma di pengaturan peramban, lalu ketuk Mulai merekam lagi.";
@@ -33,11 +33,11 @@ function pesanMikrofon(e: unknown): string {
   return "Tidak bisa mengakses mikrofon. Coba lagi.";
 }
 
-const tutupKonteks = (ctx: AudioContext | null) => {
+export const tutupKonteks = (ctx: AudioContext | null) => {
   if (ctx && ctx.state !== "closed") void ctx.close().catch(() => undefined);
 };
 
-const lepasStream = (stream: MediaStream) => {
+export const lepasStream = (stream: MediaStream) => {
   for (const t of stream.getTracks()) {
     t.onended = null;
     t.stop();

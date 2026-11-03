@@ -8,7 +8,13 @@ import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { api, ok, pesanGalat } from "@/lib/api";
 
-export type OrangGtk = { email: string; namaResmi: string; units: ("TK" | "SD" | "SMP" | "SMA")[] };
+export type OrangGtk = {
+  email: string;
+  namaResmi: string;
+  units: ("TK" | "SD" | "SMP" | "SMA")[];
+  /** "pengguna" = akun yang pernah masuk tetapi tidak ada di direktori GTK (nama dari akun Google, tanpa unit). */
+  sumber?: "gtk" | "pengguna";
+};
 
 const MIN_HURUF = 2;
 const JEDA_KETIK_MS = 250;
@@ -31,8 +37,9 @@ function Pesan({ children }: { children: ReactNode }) {
 }
 
 /**
- * Pemilih satu orang dari direktori GTK (hasil sinkron SIM-GTK). Pencarian dilakukan di server
- * setelah minimal 2 huruf dan jeda ketik singkat; daftar tidak difilter ulang di klien.
+ * Pemilih satu orang. Pencarian dilakukan di server setelah minimal 2 huruf dan jeda ketik singkat; daftar tidak
+ * difilter ulang di klien. `sumber="semua"` (bawaan) mencari direktori GTK (SIM-GTK) sekaligus pengguna yang sudah
+ * terdaftar di aplikasi; `sumber="gtk"` hanya direktori GTK (mis. guru yang disupervisi).
  */
 export function PilihOrang({
   value,
@@ -40,12 +47,14 @@ export function PilihOrang({
   label,
   placeholder = "Cari nama atau email",
   id,
+  sumber = "semua",
 }: {
   value: OrangGtk | null;
   onChange: (o: OrangGtk | null) => void;
   label: string;
   placeholder?: string;
   id?: string;
+  sumber?: "gtk" | "semua";
 }) {
   const idOtomatis = useId();
   const idTombol = id ?? idOtomatis;
@@ -55,8 +64,9 @@ export function PilihOrang({
   const cari = useDebounced(kata, JEDA_KETIK_MS);
 
   const hasil = useQuery({
-    queryKey: ["gtk", cari],
-    queryFn: async () => ok(await api.gtk.$get({ query: { cari } })),
+    queryKey: ["gtk", sumber, cari],
+    queryFn: async (): Promise<OrangGtk[]> =>
+      sumber === "gtk" ? ok(await api.gtk.$get({ query: { cari } })) : ok(await api.gtk.orang.$get({ query: { cari } })),
     enabled: terbuka && cari.length >= MIN_HURUF,
     staleTime: 10 * 60_000,
   });
@@ -91,7 +101,13 @@ export function PilihOrang({
       </div>
     );
   } else if (hasil.data.length === 0) {
-    isi = <Pesan>Tidak ada GTK dengan nama itu. Direktori diambil dari SIM-GTK.</Pesan>;
+    isi = (
+      <Pesan>
+        {sumber === "gtk"
+          ? "Tidak ada GTK dengan nama itu. Direktori diambil dari SIM-GTK."
+          : "Tidak ada orang dengan nama itu. Pencarian mencakup direktori GTK dan pengguna yang sudah masuk ke ruma. Anda juga bisa mengetik email langsung."}
+      </Pesan>
+    );
   } else {
     isi = hasil.data.map((o) => (
       <CommandItem
@@ -106,6 +122,7 @@ export function PilihOrang({
           <p className="truncate text-xs text-muted-foreground">{o.email}</p>
         </div>
         <div className="flex shrink-0 gap-1">
+          {o.sumber === "pengguna" && <Badge variant="outline">Pengguna</Badge>}
           {o.units.map((u) => (
             <Badge key={u} variant="secondary">
               {u}

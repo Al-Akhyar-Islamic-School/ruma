@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { PilihOrang } from "./pilih-orang";
 import { type Anggota, normalisasiEmail, POLA_EMAIL, tambahAnggota } from "./util";
 
-/** Input email manual (untuk orang yang tidak ada di direktori GTK) dengan validasi format. */
+/** Input email manual (untuk orang yang tidak ketemu lewat pencarian) dengan validasi format. */
 function EmailManual({ onTambah, disabled }: { onTambah: (email: string) => boolean; disabled: boolean }) {
   const id = useId();
   const idGalat = `${id}-galat`;
@@ -66,7 +66,7 @@ function EmailManual({ onTambah, disabled }: { onTambah: (email: string) => bool
 }
 
 /**
- * Daftar orang yang diedit: tambah lewat pencarian GTK atau email manual, hapus per orang.
+ * Daftar orang yang diedit: tambah lewat pencarian (GTK dan pengguna terdaftar) atau email manual, hapus per orang.
  * Dipakai oleh undangan per orang dan oleh editor grup.
  */
 export function AnggotaEditor({
@@ -111,7 +111,7 @@ export function AnggotaEditor({
         onChange={(o) => {
           if (o) tambah({ email: o.email, namaResmi: o.namaResmi });
         }}
-        label="Cari di direktori GTK"
+        label="Cari orang (GTK dan pengguna ruma)"
         placeholder="Cari nama atau email"
       />
       <EmailManual onTambah={(email) => tambah({ email, namaResmi: null })} disabled={penuh} />

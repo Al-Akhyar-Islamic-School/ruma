@@ -13,8 +13,10 @@ import { KerangkaGelap } from "./kerangka";
 import type { RencanaKirim } from "./kirim";
 import { cekDukunganRekam } from "./mime";
 import { PanelKirim } from "./panel-kirim";
+import { StatusKesiapan } from "./status-kesiapan";
 import { hitungPotongan, usePengunggah } from "./unggah";
 import { type PotonganBaru, usePerekam } from "./use-perekam";
+import { usePraRekam } from "./use-pra-rekam";
 import { useWakeLock } from "./use-wake-lock";
 import { Waveform } from "./waveform";
 
@@ -84,6 +86,7 @@ export function LayarRekam({ uuid, userId, judul, tipeSesi, subjudul, maksDurasi
     onBatasDurasi: () => void selesaikan(true),
   });
   const { fase } = perekam;
+  const pra = usePraRekam({ aktif: fase === "siap" && dukungan.ok, maksDurasiDetik });
   const sedangMerekam = fase === "merekam" || fase === "dijeda";
   const layarMenyala = useWakeLock(sedangMerekam);
 
@@ -131,6 +134,8 @@ export function LayarRekam({ uuid, userId, judul, tipeSesi, subjudul, maksDurasi
   };
 
   const mulaiRekam = () => {
+    // Mikrofon pra-rekam dilepas dulu supaya `getUserMedia` di `perekam.mulai` tidak berebut perangkat (izin sudah ada, jadi tanpa prompt kedua).
+    pra.lepas();
     // Pembuatan catatan lokal berjalan paralel dengan permintaan izin mikrofon; `perekam.mulai` harus dipanggil dalam ketukan ini.
     siapLokal.current = pastikanSesiLokal({
       uuid,
@@ -298,14 +303,18 @@ export function LayarRekam({ uuid, userId, judul, tipeSesi, subjudul, maksDurasi
       </main>
 
       <div className="px-4 pb-3">
-        <BukuBesar
-          potongan={snap.potongan}
-          hitungan={hitungan}
-          sedangRekam={sedangMerekam}
-          berdenyut={fase === "merekam"}
-          online={snap.online}
-          penyimpananBermasalah={penyimpananBermasalah}
-        />
+        {fase === "siap" && dukungan.ok ? (
+          <StatusKesiapan mikrofon={pra.mikrofon} penyimpanan={pra.penyimpanan} server={pra.server} onPeriksaMikrofon={pra.periksaMikrofon} />
+        ) : (
+          <BukuBesar
+            potongan={snap.potongan}
+            hitungan={hitungan}
+            sedangRekam={sedangMerekam}
+            berdenyut={fase === "merekam"}
+            online={snap.online}
+            penyimpananBermasalah={penyimpananBermasalah}
+          />
+        )}
       </div>
 
       <footer className="px-4 pb-4">
@@ -315,14 +324,25 @@ export function LayarRekam({ uuid, userId, judul, tipeSesi, subjudul, maksDurasi
               type="button"
               variant="default"
               aria-label="Mulai merekam"
-              disabled={!dukungan.ok || fase === "meminta-izin"}
+              disabled={!dukungan.ok || fase === "meminta-izin" || pra.mikrofon.status === "masalah"}
               onClick={mulaiRekam}
               className="size-[72px] rounded-full shadow-lg shadow-primary/30 [&_svg:not([class*='size-'])]:size-8"
             >
               <MicIcon aria-hidden />
             </Button>
             <p className="text-sm font-semibold">{fase === "meminta-izin" ? "Menunggu izin mikrofon…" : "Mulai merekam"}</p>
-            <p className="text-center text-xs text-muted-foreground">Peramban akan meminta izin mikrofon saat Anda mengetuk tombol ini.</p>
+            {fase === "siap" && pra.mikrofon.status === "masalah" ? (
+              <>
+                <p className="max-w-sm text-center text-xs text-muted-foreground">Mulai dinonaktifkan: {pra.mikrofon.pesan}</p>
+                <Button type="button" variant="secondary" className="h-12" onClick={pra.ulangi}>
+                  Periksa lagi
+                </Button>
+              </>
+            ) : (
+              fase === "siap" &&
+              dukungan.ok &&
+              !pra.mikrofon.izin && <p className="text-center text-xs text-muted-foreground">Peramban akan meminta izin mikrofon saat Anda mengetuk tombol ini.</p>
+            )}
           </div>
         ) : (
           <>

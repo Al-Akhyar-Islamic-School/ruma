@@ -9,7 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { api, ok, pesanGalat } from "@/lib/api";
-import { type Me, meQuery, useMe } from "@/lib/auth";
+import { hapusCadanganMe, type Me, meQuery, useMe } from "@/lib/auth";
 import { setTema, type Tema, useTema } from "@/lib/theme";
 import { toast } from "sonner";
 
@@ -81,6 +81,7 @@ function MenuSamping({ open, onClose, me }: { open: boolean; onClose: () => void
       await ok(await api.auth.logout.$post());
       qc.clear();
       qc.setQueryData(meQuery.queryKey, null);
+      hapusCadanganMe();
       onClose();
       await navigate({ to: "/login", search: { error: undefined } });
     } catch (e) {

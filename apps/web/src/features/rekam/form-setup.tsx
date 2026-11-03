@@ -137,7 +137,7 @@ function FormSetup({ userId, supervisiAktif }: { userId: number; supervisiAktif:
 
       {supervisi ? (
         <>
-          <PilihOrang id="rekam-guru" label="Guru yang disupervisi" value={guru} onChange={setGuru} placeholder="Cari nama guru" />
+          <PilihOrang id="rekam-guru" label="Guru yang disupervisi" value={guru} onChange={setGuru} placeholder="Cari nama guru" sumber="gtk" />
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label htmlFor="rekam-kelas">Kelas</Label>
