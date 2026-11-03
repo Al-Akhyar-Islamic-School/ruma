@@ -180,6 +180,7 @@ export async function tahapAnalisis(s: Sesi) {
           items.map((a) => ({
             dokumenId: ins.insertId,
             tugas: a.tugas,
+            detail: a.detail || null,
             picNama: (a.pic || "-").slice(0, 150),
             // Tenggat relatif ("Sebelum PTS") tidak muat di kolom DATE; tetap ada di payload dokumen.
             tenggatWaktu:
@@ -194,4 +195,4 @@ export async function tahapAnalisis(s: Sesi) {
   });
 }
 
-type ActionItem = { tugas: string; pic?: string; tenggat_waktu?: string | null };
+type ActionItem = { tugas: string; detail?: string; pic?: string; tenggat_waktu?: string | null };

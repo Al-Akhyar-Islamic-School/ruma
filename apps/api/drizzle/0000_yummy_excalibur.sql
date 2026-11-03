@@ -2,6 +2,7 @@ CREATE TABLE `ruma_action_items` (
 	`id` bigint unsigned AUTO_INCREMENT NOT NULL,
 	`dokumen_id` bigint unsigned NOT NULL,
 	`tugas` text NOT NULL,
+	`detail` text,
 	`pic_nama` varchar(150) NOT NULL,
 	`pic_user_id` bigint unsigned,
 	`pic_email` varchar(255),

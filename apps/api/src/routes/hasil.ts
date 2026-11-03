@@ -226,16 +226,59 @@ export const hasilRoutes = new Hono<AuthEnv>()
       // Jika sesi ditautkan ke Agenda SIMGTK, kirim balik hasil notulen & tautan docs secara otomatis (Sync-back)
       if (s.simgtkAgendaId) {
         const payloadData = d.payload as DataNotulen;
-        const tindakLanjutList = (payloadData.action_items || []).map((t) => ({
+        // Ambil daftar tugas dari tabel ruma_action_items agar pic_email yang sudah ditandai ikut terkirim
+        const dbActionItems = await db
+          .select({
+            tugas: actionItems.tugas,
+            detail: actionItems.detail,
+            picEmail: actionItems.picEmail,
+            picNama: actionItems.picNama,
+            tenggatWaktu: actionItems.tenggatWaktu,
+          })
+          .from(actionItems)
+          .where(eq(actionItems.dokumenId, d.id));
+
+        // Ambil juga dari peserta rapat untuk mencocokkan nama jika pic_email belum ditandai manual
+        const pesertas = await daftarPesertaDariUndangan(s.id);
+        const cariEmailPeserta = (namaPic: string): string | null => {
+          const n = namaPic.toLowerCase();
+          const p = pesertas.find((item) => item.nama.toLowerCase().includes(n) || n.includes(item.nama.toLowerCase()));
+          return p?.email || null;
+        };
+
+        const tindakLanjutList = (dbActionItems.length > 0 ? dbActionItems : (payloadData.action_items || []).map((t) => ({
+          tugas: t.tugas,
+          detail: (t as any).detail || null,
+          picEmail: null,
+          picNama: t.pic || "",
+          tenggatWaktu: t.tenggat_waktu || null,
+        }))).map((t) => ({
           deskripsi: t.tugas,
-          detail: null,
-          penanggung_jawab_email: null,
-          tenggat: t.tenggat_waktu ?? null,
+          detail: t.detail || (t.picNama ? `PIC: ${t.picNama}` : null),
+          penanggung_jawab_email: t.picEmail || cariEmailPeserta(t.picNama) || user.email,
+          tenggat: t.tenggatWaktu ?? null,
         }));
+        const blokRingkasan: string[] = [];
+        if (payloadData.ringkasan_eksekutif?.trim()) {
+          blokRingkasan.push(payloadData.ringkasan_eksekutif.trim());
+        }
+        if (payloadData.agenda_dan_keputusan && payloadData.agenda_dan_keputusan.length > 0) {
+          blokRingkasan.push("\n--- AGENDA & KEPUTUSAN ---");
+          payloadData.agenda_dan_keputusan.forEach((item, idx) => {
+            blokRingkasan.push(`\n${idx + 1}. ${item.agenda}`);
+            if (item.pembahasan?.trim()) {
+              blokRingkasan.push(`   Pembahasan: ${item.pembahasan.trim()}`);
+            }
+            if (item.keputusan?.trim()) {
+              blokRingkasan.push(`   Keputusan: ${item.keputusan.trim()}`);
+            }
+          });
+        }
+        const teksRingkasanLengkap = blokRingkasan.join("\n").trim() || s.judul;
 
         void kirimNotulenKeSimgtk(s.simgtkAgendaId, {
           email: user.email,
-          ringkasan: payloadData.ringkasan_eksekutif || s.judul,
+          ringkasan: teksRingkasanLengkap,
           ruma_session_url: `${env.APP_URL}/sesi/${s.uuid}`,
           google_docs_url: hasil.url,
           tindak_lanjut: tindakLanjutList,

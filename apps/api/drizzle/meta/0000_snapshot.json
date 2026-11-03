@@ -1,7 +1,7 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "47c8b5bf-7aae-4885-9009-34a04b9c453e",
+  "id": "95ae3ac1-0175-42fc-b04c-4aa9e10695b1",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "ruma_action_items": {
@@ -26,6 +26,13 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false
+        },
+        "detail": {
+          "name": "detail",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
           "autoincrement": false
         },
         "pic_nama": {

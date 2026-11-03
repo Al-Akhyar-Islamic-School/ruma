@@ -224,6 +224,7 @@ export const actionItems = mysqlTable("ruma_action_items", {
     .notNull()
     .references(() => dokumen.id, { onDelete: "cascade" }),
   tugas: text("tugas").notNull(),
+  detail: text("detail"),
   picNama: varchar("pic_nama", { length: 150 }).notNull(),
   picUserId: ref("pic_user_id").references(() => users.id),
   // Orang yang ditandai sebagai PIC dari direktori GTK (bisa belum pernah login). `picNama` tetap teks asli dari AI.

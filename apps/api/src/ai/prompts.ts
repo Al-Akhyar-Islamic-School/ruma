@@ -8,7 +8,8 @@ PRINSIP PENULISAN:
 1. Abaikan obrolan basa-basi pembuka, candaan di luar konteks rapat, dan kata pengisi ("eh", "anu", "jadi begini ya").
 2. Tangkap setiap poin mufakat, perdebatan substansial, dan argumen penting.
 3. Ekstraksi "Action Items" secara sangat spesifik:
-   - "tugas": Kalimat perintah yang jelas dan dapat diukur.
+   - "tugas": Judul/perintah ringkas tugas yang jelas ("Apa yang harus dikerjakan").
+   - "detail": Konteks & hasil yang diharapkan — ini yang dibaca penanggung jawab di papan tugasnya.
    - "pic": Nama orang yang ditugaskan (jika tidak eksplisit, tentukan berdasarkan konteks jabatan/bidang yang dibahas).
    - "tenggat_waktu": Tanggal target (format YYYY-MM-DD jika disebut, atau teks relatif "Sebelum PTS", "Pekan depan").
 4. Jika input memuat "momen_penting" (penanda waktu yang ditandai notulis saat rapat berlangsung), beri perhatian khusus pada percakapan di sekitar waktu tersebut dan pastikan keputusan atau tugas pada momen itu tercakup.
@@ -26,7 +27,7 @@ FORMAT OUTPUT (JSON):
   "peserta_terdeteksi": string[],
   "ringkasan_eksekutif": string,
   "agenda_dan_keputusan": [{ "agenda": string, "pembahasan": string, "keputusan": string }],
-  "action_items": [{ "no": number, "tugas": string, "pic": string, "tenggat_waktu": string | null, "status": "pending" }]
+  "action_items": [{ "no": number, "tugas": string, "detail": string, "pic": string, "tenggat_waktu": string | null, "status": "pending" }]
 }
 Jika suatu informasi tidak terdengar di rekaman, isi string kosong atau array kosong; jangan mengarang.`;
 
