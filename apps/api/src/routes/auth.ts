@@ -91,12 +91,13 @@ export const auth = new Hono()
   })
   .get("/me", requireAuth, async (c) => {
     const { id, email, name, picture, role } = c.var.user;
-    // Nama resmi dan unit dari direktori SIM-GTK (kosong bila email belum ada di SIM-GTK / belum disinkronkan).
     const e = email.toLowerCase();
-    const [resmi, units, supervisi] = await Promise.all([
+    // Nama resmi dan unit dari direktori SIM-GTK (kosong bila email belum ada di SIM-GTK / belum disinkronkan).
+    const [resmi, units, supervisi, driveTersambung] = await Promise.all([
       db.query.gtk.findFirst({ where: eq(gtk.email, e) }),
       db.select({ unit: gtkUnit.unit }).from(gtkUnit).where(eq(gtkUnit.email, e)),
       modulSupervisiAktif(),
+      statusDriveUser(id),
     ]);
     return c.json({
       id,
@@ -111,6 +112,7 @@ export const auth = new Hono()
       moderator: MODERATOR.includes(role),
       // Saklar modul (superadmin yang mengubah). UI menyembunyikan fitur modul yang mati; server tetap menegakkan.
       modul: { supervisi },
+      driveTersambung,
     });
   })
   // Sambungkan Google Drive (izin baca-tulis berkas ruma.)

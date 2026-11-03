@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Link, Outlet, useNavigate } from "@tanstack/react-router";
-import { BookOpenTextIcon, HomeIcon, LogOutIcon, MenuIcon, MonitorIcon, MoonIcon, ShieldCheckIcon, SunIcon, UsersIcon, FilePlus2Icon } from "lucide-react";
+import { BookOpenTextIcon, HomeIcon, LogOutIcon, MenuIcon, MonitorIcon, MoonIcon, ShieldCheckIcon, SunIcon, UsersIcon, FilePlus2Icon, CheckCircle2Icon, CloudIcon, UnlinkIcon } from "lucide-react";
 import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -78,6 +78,15 @@ function MenuSamping({ open, onClose, me }: { open: boolean; onClose: () => void
   const qc = useQueryClient();
   const navigate = useNavigate();
 
+  async function putusDrive() {
+    try {
+      await ok(await api.auth.google.drive.$delete());
+      toast.success("Sambungan Google Drive diputuskan");
+      await qc.invalidateQueries({ queryKey: meQuery.queryKey });
+    } catch (e) {
+      toast.error(pesanGalat(e));
+    }
+  }
   async function keluar() {
     try {
       onClose();
@@ -138,7 +147,38 @@ function MenuSamping({ open, onClose, me }: { open: boolean; onClose: () => void
             </NavLink>
           )}
         </nav>
-        <div className="mt-auto space-y-3 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+        <div className="mt-auto space-y-4 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+          <div className="space-y-2 rounded-2xl border p-3 bg-muted/30">
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-1.5 text-xs font-semibold">
+                <CloudIcon className="size-4 text-primary" /> Google Drive
+              </span>
+              {me.driveTersambung ? (
+                <Badge variant="outline" className="gap-1 border-success/30 bg-success/10 text-success text-[10px]">
+                  <CheckCircle2Icon className="size-3" /> Tersambung
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="text-[10px] text-muted-foreground">Belum aktif</Badge>
+              )}
+            </div>
+            <p className="text-[11px] leading-relaxed text-muted-foreground">
+              {me.driveTersambung
+                ? "Notulen yang disetujui dapat diekspor langsung ke Google Docs di Drive Anda."
+                : "Sambungkan untuk menyimpan dan mengekspor notulen langsung ke Google Docs Anda."}
+            </p>
+            {me.driveTersambung ? (
+              <Button variant="ghost" size="xs" onClick={putusDrive} className="w-full text-destructive hover:bg-destructive/10">
+                <UnlinkIcon className="size-3.5" /> Putuskan sambungan
+              </Button>
+            ) : (
+              <Button variant="outline" size="sm" asChild className="w-full h-9 text-xs">
+                <a href={`${api.auth.google.drive.$url()}`}>
+                  Sambungkan Drive Saya
+                </a>
+              </Button>
+            )}
+          </div>
+
           <p className="text-sm font-semibold">Tampilan</p>
           <ToggleGroup
             type="single"
