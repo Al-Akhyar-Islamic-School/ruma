@@ -1,4 +1,4 @@
-export const UNIT = ["TK", "SD", "SMP", "SMA"] as const;
+export const UNIT = ["TK", "SD", "SMP", "SMA", "YPI"] as const;
 export type Unit = (typeof UNIT)[number];
 
 /** Pola yang sama dengan `z.email()` di server, supaya email yang lolos di sini juga lolos di API. */

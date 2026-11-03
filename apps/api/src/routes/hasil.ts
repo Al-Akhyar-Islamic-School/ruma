@@ -8,7 +8,7 @@ import { z } from "zod";
 import { diundang, findOwn, findReadable } from "../akses.js";
 import type { AuthEnv } from "../auth/session.js";
 import { db } from "../db/index.js";
-import { actionItems, dokumen, gtk, sesi, transkrip, users } from "../db/schema.js";
+import { actionItems, dokumen, gtk, seriRapat, sesi, transkrip, users } from "../db/schema.js";
 import { audioStorage } from "../storage.js";
 import { emailBaku } from "../validasi.js";
 import { statusDriveUser, urlOAuthDrive } from "../integrasi/google-auth.js";
@@ -176,14 +176,32 @@ export const hasilRoutes = new Hono<AuthEnv>()
     }
 
     try {
+      let fileIdToUse = d.googleDocsFileId;
+      let isAppend = false;
+      let namaSeri: string | undefined;
+
+      // Cek apakah sesi ini bagian dari Seri Rapat berkala
+      if (s.seriId) {
+        const [seri] = await db.select().from(seriRapat).where(eq(seriRapat.id, s.seriId)).limit(1);
+        if (seri) {
+          namaSeri = seri.nama;
+          if (seri.googleDocsFileId) {
+            fileIdToUse = seri.googleDocsFileId;
+            isAppend = true;
+          }
+        }
+      }
+
       const pesertaUndangan = await daftarPesertaDariUndangan(s.id);
       const hasil = await eksporKeGoogleDocs(
         user.id,
         s.judul,
         d.payload as DataNotulen,
-        d.googleDocsFileId,
-        pesertaUndangan
+        fileIdToUse,
+        pesertaUndangan,
+        { isAppend, namaSeri }
       );
+
       await db
         .update(dokumen)
         .set({
@@ -191,6 +209,18 @@ export const hasilRoutes = new Hono<AuthEnv>()
           googleDocsUrl: hasil.url,
         })
         .where(eq(dokumen.id, d.id));
+
+      // Jika bagian dari seri, simpan juga berkas ini sebagai dokumen induk seri rapat
+      if (s.seriId) {
+        await db
+          .update(seriRapat)
+          .set({
+            googleDocsFileId: hasil.fileId,
+            googleDocsUrl: hasil.url,
+          })
+          .where(eq(seriRapat.id, s.seriId));
+      }
+
       return c.json({ ok: true, url: hasil.url });
     } catch (e) {
       return c.json({ error: (e as Error).message }, 500);

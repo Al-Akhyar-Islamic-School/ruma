@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { LoaderCircleIcon, MicIcon, MicOffIcon } from "lucide-react";
 import { type FormEvent, useMemo, useState } from "react";
@@ -49,6 +49,12 @@ function FormSetup({ userId, supervisiAktif }: { userId: number; supervisiAktif:
   const [judulRapat, setJudulRapat] = useState("");
   const [kategori, setKategori] = useState<string>(TANPA_KATEGORI);
   const daftarKategori = kategoriAktif(useKategori());
+  const [seriId, setSeriId] = useState<string>("tanpa");
+  const seriQuery = useQuery({
+    queryKey: ["seri"],
+    queryFn: async () => ok(await api.seri.$get()),
+    staleTime: 60_000,
+  });
   const [guru, setGuru] = useState<OrangGtk | null>(null);
   const [kelas, setKelas] = useState("");
   const [mapel, setMapel] = useState("");
@@ -79,7 +85,11 @@ function FormSetup({ userId, supervisiAktif }: { userId: number; supervisiAktif:
           : !supervisi && kategori !== TANPA_KATEGORI
             ? { kategori }
             : {};
-      const sesi = await ok(await api.sesi.$post({ json: { tipe_sesi: mode, judul, audio_mime: dukungan.mime, metadata } }));
+      const jsonPayload: any = { tipe_sesi: mode, judul, audio_mime: dukungan.mime, metadata };
+      if (seriId !== "tanpa" && !Number.isNaN(Number(seriId))) {
+        jsonPayload.seri_id = Number(seriId);
+      }
+      const sesi = await ok(await api.sesi.$post({ json: jsonPayload }));
       // Catatan lokal dibuat sekarang agar pemulihan tahu pemilik dan MIME sesi ini. Gagal menyimpan tidak menghalangi merekam.
       await simpanSesiLokal({
         uuid: sesi.uuid,
@@ -201,6 +211,26 @@ function FormSetup({ userId, supervisiAktif }: { userId: number; supervisiAktif:
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="rekam-seri">Bagian dari Seri Rapat? (Opsional)</Label>
+            <Select value={seriId} onValueChange={setSeriId}>
+              <SelectTrigger id="rekam-seri" className="w-full data-[size=default]:h-12 rounded-xl">
+                <SelectValue placeholder="Pilih Seri Rapat" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="tanpa">Bukan rapat serial (Sesi mandiri)</SelectItem>
+                {(seriQuery.data ?? []).map((s) => (
+                  <SelectItem key={s.id} value={String(s.id)}>
+                    {s.nama}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Rapat serial akan otomatis menyambung di berkas Google Docs yang sama (halaman baru per pertemuan).
+            </p>
           </div>
         </>
       )}

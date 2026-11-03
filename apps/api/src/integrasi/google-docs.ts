@@ -90,7 +90,8 @@ export async function eksporKeGoogleDocs(
   judulSesi: string,
   payload: DataNotulen,
   existingFileId?: string | null,
-  pesertaUndangan?: { nama: string; email: string }[]
+  pesertaUndangan?: { nama: string; email: string }[],
+  options?: { isAppend?: boolean; namaSeri?: string }
 ): Promise<{ fileId: string; url: string }> {
   const token = await ambilValidAccessToken(userId);
   if (!token) {
@@ -98,9 +99,11 @@ export async function eksporKeGoogleDocs(
   }
 
   const tanggal = payload.tanggal || new Date().toISOString().slice(0, 10);
-  const judulDokumen = `Notulen - ${judulSesi} (${tanggal})`;
+  const judulDokumen = options?.namaSeri ? `Notulen Seri - ${options.namaSeri}` : `Notulen - ${judulSesi} (${tanggal})`;
 
   let fileId = existingFileId;
+  let startOffset = 1;
+  let shouldInsertPageBreak = false;
 
   // 1. Dapatkan atau buat dokumen baru
   if (fileId) {
@@ -109,25 +112,33 @@ export async function eksporKeGoogleDocs(
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!resCek.ok) {
-      // Jika dokumen lama sudah dihapus atau tidak ditemukan di Drive, reset fileId agar dibuatkan baru
       fileId = null;
     } else {
-      // Dokumen lama ada -> bersihkan konten lama sebelum diisi ulang (idempotent upsert)
       const docObj = (await resCek.json()) as { body?: { content?: { endIndex?: number }[] } };
       const content = docObj.body?.content || [];
       const lastElement = content[content.length - 1];
       const endIndex = (lastElement?.endIndex ?? 1) - 1;
-      if (endIndex > 1) {
-        await fetch(`${DOCS_BASE}/${fileId}:batchUpdate`, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-          body: JSON.stringify({
-            requests: [{ deleteContentRange: { range: { startIndex: 1, endIndex } } }],
-          }),
-        });
+
+      if (options?.isAppend) {
+        // Mode Rekursif (Serial): Sambung di akhir dokumen dengan Page Break
+        startOffset = Math.max(1, endIndex);
+        shouldInsertPageBreak = startOffset > 1;
+      } else {
+        // Mode Standar (Sesi Tunggal): Idempotent overwrite konten lama
+        if (endIndex > 1) {
+          await fetch(`${DOCS_BASE}/${fileId}:batchUpdate`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              requests: [{ deleteContentRange: { range: { startIndex: 1, endIndex } } }],
+            }),
+          });
+        }
+        startOffset = 1;
       }
     }
   }
+
 
   if (!fileId) {
     const resCreate = await fetch(DOCS_BASE, {
@@ -153,12 +164,24 @@ export async function eksporKeGoogleDocs(
     }
   }
 
-  // 2. Susun dokumen terstruktur via renderer-notulen (peserta dari undangan jika ada)
-  const rendered = susunStrukturDokumen(judulSesi, payload, pesertaUndangan);
-  // 3. Susun batchUpdate formatting & table styling via google-docs-format
-  const { requests } = susunFormatBatchUpdate(rendered, 1);
+  // 2. Jika mode append, masukkan Page Break di awal sebelum menambahkan konten sesi baru
+  if (shouldInsertPageBreak) {
+    await fetch(`${DOCS_BASE}/${fileId}:batchUpdate`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        requests: [{ insertPageBreak: { location: { index: startOffset } } }],
+      }),
+    });
+    startOffset += 1;
+  }
 
-  // 4. Eksekusi batchUpdate
+  // 3. Susun dokumen terstruktur via renderer-notulen
+  const rendered = susunStrukturDokumen(judulSesi, payload, pesertaUndangan);
+  // 4. Susun batchUpdate formatting via google-docs-format
+  const { requests } = susunFormatBatchUpdate(rendered, startOffset);
+
+  // 5. Eksekusi batchUpdate
   const resUpdate = await fetch(`${DOCS_BASE}/${fileId}:batchUpdate`, {
     method: "POST",
     headers: {

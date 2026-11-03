@@ -102,6 +102,7 @@ export const sesiRoutes = new Hono<AuthEnv>()
     await db.insert(sesi).values({
       uuid,
       userId: user.id,
+      seriId: b.seri_id ?? null,
       tipeSesi: b.tipe_sesi,
       judul: b.judul,
       audioMime: b.audio_mime,
@@ -125,6 +126,7 @@ export const sesiRoutes = new Hono<AuthEnv>()
       tipeSesi: s.tipeSesi,
       judul: s.judul,
       metadata: s.metadata,
+      seriId: s.seriId,
       status: s.status,
       durasiDetik: s.durasiDetik,
       maksDurasiDetik: s.maksDurasiDetik,

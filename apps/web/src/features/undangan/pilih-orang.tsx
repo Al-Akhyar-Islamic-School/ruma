@@ -11,7 +11,7 @@ import { api, ok, pesanGalat } from "@/lib/api";
 export type OrangGtk = {
   email: string;
   namaResmi: string;
-  units: ("TK" | "SD" | "SMP" | "SMA")[];
+  units: ("TK" | "SD" | "SMP" | "SMA" | "YPI")[];
   /** "pengguna" = akun yang pernah masuk tetapi tidak ada di direktori GTK (nama dari akun Google, tanpa unit). */
   sumber?: "gtk" | "pengguna";
 };

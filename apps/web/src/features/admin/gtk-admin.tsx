@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/card";
 import { ApiError, api, ok, pesanGalat } from "@/lib/api";
 import { formatWaktu } from "@/lib/format";
 
-const UNIT = ["TK", "SD", "SMP", "SMA"] as const;
+const UNIT = ["TK", "SD", "SMP", "SMA", "YPI"] as const;
 
 function pesanSinkron(e: unknown): string {
   if (e instanceof ApiError) {
@@ -27,7 +27,7 @@ function pesanSinkron(e: unknown): string {
 
 function HitungUnit({ perUnit }: { perUnit: Record<string, number> }) {
   return (
-    <dl className="grid grid-cols-4 gap-2 text-center">
+    <dl className="grid grid-cols-5 gap-2 text-center">
       {UNIT.map((u) => (
         <div key={u} className="rounded-xl bg-muted px-2 py-2">
           <dt className="text-xs font-semibold text-muted-foreground">{u}</dt>

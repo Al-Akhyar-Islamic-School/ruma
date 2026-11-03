@@ -61,14 +61,18 @@ function HalamanGrup() {
 
   return (
     <div className="space-y-5 pb-36">
-      <header className="space-y-1">
-        <h1 className="text-xl font-semibold">Grup undangan</h1>
-        <p className="text-sm text-muted-foreground">
-          Grup mengumpulkan orang yang diundang bersama ke rekaman. Di sini Anda mengelola grup milik Anda dan melihat grup orang lain yang menyertakan
-          Anda.
-        </p>
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-1">
+          <h1 className="text-xl font-bold">Grup undangan</h1>
+          <p className="text-sm text-muted-foreground">
+            Kumpulkan orang yang sering diundang bersama ke rekaman rapat.
+          </p>
+        </div>
+        <Button type="button" onClick={() => bukaEditor(null)} className="h-11 gap-1.5 self-start rounded-xl sm:self-auto">
+          <PlusIcon className="size-4" aria-hidden />
+          <span>Buat grup</span>
+        </Button>
       </header>
-
       <section aria-labelledby="judul-grup-saya" className="space-y-3">
         <div className="space-y-1">
           <h2 id="judul-grup-saya" className="text-base font-semibold">
@@ -87,7 +91,13 @@ function HalamanGrup() {
         ) : daftar.data.length === 0 ? (
           <EmptyState
             title="Belum ada grup"
-            hint="Kumpulkan orang yang sering Anda undang bersama, misalnya tim kurikulum atau pimpinan unit. Tekan Buat grup di bawah untuk memulai."
+            hint="Kumpulkan orang yang sering Anda undang bersama, misalnya tim kurikulum atau pimpinan unit."
+            action={
+              <Button type="button" onClick={() => bukaEditor(null)} className="mt-2 h-10 gap-1.5 rounded-xl">
+                <PlusIcon className="size-4" aria-hidden />
+                <span>Buat grup baru</span>
+              </Button>
+            }
           />
         ) : (
           <ul className="space-y-3">
@@ -148,15 +158,6 @@ function HalamanGrup() {
           </ul>
         )}
       </section>
-
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-20 bg-gradient-to-t from-background via-background/90 to-transparent px-4 pt-10 pb-[max(1rem,env(safe-area-inset-bottom))]">
-        <div className="mx-auto max-w-3xl">
-          <Button type="button" size="lg" className="pointer-events-auto w-full" onClick={() => bukaEditor(null)}>
-            <PlusIcon aria-hidden />
-            Buat grup
-          </Button>
-        </div>
-      </div>
 
       <GrupSheet id={editorId} open={editorBuka} onOpenChange={setEditorBuka} />
 

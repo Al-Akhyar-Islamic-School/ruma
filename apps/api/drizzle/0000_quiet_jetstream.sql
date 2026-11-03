@@ -65,7 +65,7 @@ CREATE TABLE `ruma_gtk` (
 --> statement-breakpoint
 CREATE TABLE `ruma_gtk_unit` (
 	`email` varchar(255) NOT NULL,
-	`unit` enum('TK','SD','SMP','SMA') NOT NULL,
+	`unit` enum('TK','SD','SMP','SMA','YPI') NOT NULL,
 	CONSTRAINT `ruma_gtk_unit_email_unit_pk` PRIMARY KEY(`email`,`unit`)
 );
 --> statement-breakpoint
@@ -111,10 +111,23 @@ CREATE TABLE `ruma_permintaan_sesi` (
 	CONSTRAINT `ruma_permintaan_sesi_sesi_id_unique` UNIQUE(`sesi_id`)
 );
 --> statement-breakpoint
+CREATE TABLE `ruma_seri_rapat` (
+	`id` bigint unsigned AUTO_INCREMENT NOT NULL,
+	`owner_id` bigint unsigned NOT NULL,
+	`nama` varchar(255) NOT NULL,
+	`deskripsi` text,
+	`google_docs_file_id` varchar(255),
+	`google_docs_url` varchar(500),
+	`created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	`updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `ruma_seri_rapat_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
 CREATE TABLE `ruma_sesi` (
 	`id` bigint unsigned AUTO_INCREMENT NOT NULL,
 	`uuid` char(36) NOT NULL,
 	`user_id` bigint unsigned NOT NULL,
+	`seri_id` bigint unsigned,
 	`tipe_sesi` enum('rapat','supervisi_kelas') NOT NULL,
 	`judul` varchar(255) NOT NULL,
 	`metadata` json NOT NULL,
@@ -143,7 +156,7 @@ CREATE TABLE `ruma_sesi_undangan` (
 	`tipe` enum('orang','grup','unit','organisasi') NOT NULL,
 	`email` varchar(255),
 	`grup_id` bigint unsigned,
-	`unit` enum('TK','SD','SMP','SMA'),
+	`unit` enum('TK','SD','SMP','SMA','YPI'),
 	`target_key` varchar(300) NOT NULL,
 	`dibuat_oleh` bigint unsigned NOT NULL,
 	`created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -211,7 +224,9 @@ ALTER TABLE `ruma_pengaturan` ADD CONSTRAINT `ruma_pengaturan_diubah_oleh_ruma_u
 ALTER TABLE `ruma_permintaan_sesi` ADD CONSTRAINT `ruma_permintaan_sesi_user_id_ruma_users_id_fk` FOREIGN KEY (`user_id`) REFERENCES `ruma_users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `ruma_permintaan_sesi` ADD CONSTRAINT `ruma_permintaan_sesi_diputuskan_oleh_ruma_users_id_fk` FOREIGN KEY (`diputuskan_oleh`) REFERENCES `ruma_users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `ruma_permintaan_sesi` ADD CONSTRAINT `ruma_permintaan_sesi_sesi_id_ruma_sesi_id_fk` FOREIGN KEY (`sesi_id`) REFERENCES `ruma_sesi`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `ruma_seri_rapat` ADD CONSTRAINT `ruma_seri_rapat_owner_id_ruma_users_id_fk` FOREIGN KEY (`owner_id`) REFERENCES `ruma_users`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `ruma_sesi` ADD CONSTRAINT `ruma_sesi_user_id_ruma_users_id_fk` FOREIGN KEY (`user_id`) REFERENCES `ruma_users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `ruma_sesi` ADD CONSTRAINT `ruma_sesi_seri_id_ruma_seri_rapat_id_fk` FOREIGN KEY (`seri_id`) REFERENCES `ruma_seri_rapat`(`id`) ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `ruma_sesi_undangan` ADD CONSTRAINT `ruma_sesi_undangan_sesi_id_ruma_sesi_id_fk` FOREIGN KEY (`sesi_id`) REFERENCES `ruma_sesi`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `ruma_sesi_undangan` ADD CONSTRAINT `ruma_sesi_undangan_grup_id_ruma_grup_id_fk` FOREIGN KEY (`grup_id`) REFERENCES `ruma_grup`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE `ruma_sesi_undangan` ADD CONSTRAINT `ruma_sesi_undangan_dibuat_oleh_ruma_users_id_fk` FOREIGN KEY (`dibuat_oleh`) REFERENCES `ruma_users`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -223,6 +238,7 @@ CREATE INDEX `grup_anggota_email_idx` ON `ruma_grup_anggota` (`email`);--> state
 CREATE INDEX `gtk_unit_idx` ON `ruma_gtk_unit` (`unit`);--> statement-breakpoint
 CREATE INDEX `permintaan_status_idx` ON `ruma_permintaan_sesi` (`status`,`created_at`);--> statement-breakpoint
 CREATE INDEX `permintaan_user_idx` ON `ruma_permintaan_sesi` (`user_id`);--> statement-breakpoint
+CREATE INDEX `seri_owner_idx` ON `ruma_seri_rapat` (`owner_id`);--> statement-breakpoint
 CREATE INDEX `sesi_user_idx` ON `ruma_sesi` (`user_id`,`created_at`);--> statement-breakpoint
 CREATE INDEX `sesi_antrean_idx` ON `ruma_sesi` (`status`,`coba_lagi_setelah`);--> statement-breakpoint
 CREATE INDEX `undangan_email_idx` ON `ruma_sesi_undangan` (`email`);--> statement-breakpoint

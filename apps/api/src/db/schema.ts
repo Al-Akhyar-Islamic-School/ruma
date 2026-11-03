@@ -73,6 +73,24 @@ export type SesiMetadata = {
   penanda?: number[];
 };
 
+/** Seri Rapat (rapat berkala / rekursif, misal rapat mingguan) */
+export const seriRapat = mysqlTable(
+  "ruma_seri_rapat",
+  {
+    id: id(),
+    ownerId: ref("owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    nama: varchar("nama", { length: 255 }).notNull(),
+    deskripsi: text("deskripsi"),
+    googleDocsFileId: varchar("google_docs_file_id", { length: 255 }),
+    googleDocsUrl: varchar("google_docs_url", { length: 500 }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index("seri_owner_idx").on(t.ownerId)]
+);
+
 export const sesi = mysqlTable(
   "ruma_sesi",
   {
@@ -81,6 +99,7 @@ export const sesi = mysqlTable(
     userId: ref("user_id")
       .notNull()
       .references(() => users.id),
+    seriId: ref("seri_id").references(() => seriRapat.id, { onDelete: "set null" }),
     tipeSesi: mysqlEnum("tipe_sesi", TIPE_SESI).notNull(),
     judul: varchar("judul", { length: 255 }).notNull(),
     metadata: json("metadata").$type<SesiMetadata>().notNull(),
@@ -232,7 +251,7 @@ export type User = typeof users.$inferSelect;
 
 // --- Direktori GTK (sinkron dari SIM-GTK) ---
 
-export const UNIT = ["TK", "SD", "SMP", "SMA"] as const;
+export const UNIT = ["TK", "SD", "SMP", "SMA", "YPI"] as const;
 export type Unit = (typeof UNIT)[number];
 
 /** Nama resmi guru/tenaga kependidikan per email, disalin dari SIM-GTK. Tidak harus sudah pernah login. */

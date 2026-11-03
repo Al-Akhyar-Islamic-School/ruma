@@ -1,7 +1,7 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "ea22673e-7c92-4c27-94f5-c49d7b1f9163",
+  "id": "d7e1085a-c18b-4c27-ba06-069cdece188e",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "ruma_action_items": {
@@ -547,7 +547,7 @@
         },
         "unit": {
           "name": "unit",
-          "type": "enum('TK','SD','SMP','SMA')",
+          "type": "enum('TK','SD','SMP','SMA','YPI')",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
@@ -932,6 +932,104 @@
       },
       "checkConstraint": {}
     },
+    "ruma_seri_rapat": {
+      "name": "ruma_seri_rapat",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint unsigned",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "owner_id": {
+          "name": "owner_id",
+          "type": "bigint unsigned",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "nama": {
+          "name": "nama",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "deskripsi": {
+          "name": "deskripsi",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "google_docs_file_id": {
+          "name": "google_docs_file_id",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "google_docs_url": {
+          "name": "google_docs_url",
+          "type": "varchar(500)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "onUpdate": true,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {
+        "seri_owner_idx": {
+          "name": "seri_owner_idx",
+          "columns": [
+            "owner_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "ruma_seri_rapat_owner_id_ruma_users_id_fk": {
+          "name": "ruma_seri_rapat_owner_id_ruma_users_id_fk",
+          "tableFrom": "ruma_seri_rapat",
+          "tableTo": "ruma_users",
+          "columnsFrom": [
+            "owner_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "ruma_seri_rapat_id": {
+          "name": "ruma_seri_rapat_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
     "ruma_sesi": {
       "name": "ruma_sesi",
       "columns": {
@@ -954,6 +1052,13 @@
           "type": "bigint unsigned",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false
+        },
+        "seri_id": {
+          "name": "seri_id",
+          "type": "bigint unsigned",
+          "primaryKey": false,
+          "notNull": false,
           "autoincrement": false
         },
         "tipe_sesi": {
@@ -1121,6 +1226,19 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
+        },
+        "ruma_sesi_seri_id_ruma_seri_rapat_id_fk": {
+          "name": "ruma_sesi_seri_id_ruma_seri_rapat_id_fk",
+          "tableFrom": "ruma_sesi",
+          "tableTo": "ruma_seri_rapat",
+          "columnsFrom": [
+            "seri_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {
@@ -1181,7 +1299,7 @@
         },
         "unit": {
           "name": "unit",
-          "type": "enum('TK','SD','SMP','SMA')",
+          "type": "enum('TK','SD','SMP','SMA','YPI')",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
