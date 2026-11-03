@@ -18,7 +18,8 @@ PRINSIP PENULISAN:
    - "tugas": Kalimat perintah yang jelas dan dapat diukur.
    - "pic": Nama orang yang ditugaskan (jika tidak eksplisit, tentukan berdasarkan konteks jabatan/bidang yang dibahas).
    - "tenggat_waktu": Tanggal target (format YYYY-MM-DD jika disebut, atau teks relatif "Sebelum PTS", "Pekan depan").
-4. Output WAJIB berupa JSON murni yang valid tanpa pembungkus markdown (tanpa ```json).
+4. Jika input memuat "momen_penting" (penanda waktu yang ditandai notulis saat rapat berlangsung), beri perhatian khusus pada percakapan di sekitar waktu tersebut dan pastikan keputusan atau tugas pada momen itu tercakup.
+5. Output WAJIB berupa JSON murni yang valid tanpa pembungkus markdown (tanpa ```json).
 ```
 
 ---
@@ -31,6 +32,7 @@ PRINSIP PENULISAN:
   "judul_sesi": "Rapat Pleno Dewan Guru Persiapan Asesmen",
   "tanggal": "2026-11-03",
   "unit_sekolah": "SMP Islam Al Akhyar",
+  "momen_penting": "00:12:30, 00:41:05",
   "transkrip_mentah": "[00:01:23] Pak Fajrul: Baik bapak ibu, agenda pertama kita soal Bank Soal CBT..."
 }
 ```

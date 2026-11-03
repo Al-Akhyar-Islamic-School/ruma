@@ -1,6 +1,7 @@
 import { and, eq, exists, inArray, or, sql } from "drizzle-orm";
 import { db } from "./db/index.js";
 import { grupAnggota, gtkUnit, sesi, sesiUndangan, type User } from "./db/schema.js";
+import { filterModul } from "./pengaturan.js";
 
 /**
  * Kondisi SQL: `user` diundang ke sesi lewat salah satu dari empat jalur
@@ -9,7 +10,7 @@ import { grupAnggota, gtkUnit, sesi, sesiUndangan, type User } from "./db/schema
  * Hanya untuk query core builder (`db.select().from(sesi)`). Query relasional (`db.query.sesi`) memberi alias
  * pada tabel sehingga referensi terkorelasi `kalam_sesi.id` gagal ("Unknown column").
  */
-export function diundang(user: User) {
+export function diundang(user: Pick<User, "email">) {
   const email = user.email.toLowerCase();
   const u = sesiUndangan;
   return exists(
@@ -36,9 +37,15 @@ export function diundang(user: User) {
   );
 }
 
-/** Mutasi (unggah, finish, undang) hanya oleh perekam. */
-export const findOwn = (user: User, uuid: string) =>
-  db.query.sesi.findFirst({ where: and(eq(sesi.uuid, uuid), eq(sesi.userId, user.id)) });
+/** Mutasi (unggah, finish, undang) hanya oleh perekam. Sesi supervisi tak terlihat saat modulnya mati. */
+export async function findOwn(user: User, uuid: string) {
+  const [row] = await db
+    .select()
+    .from(sesi)
+    .where(and(eq(sesi.uuid, uuid), eq(sesi.userId, user.id), await filterModul()))
+    .limit(1);
+  return row;
+}
 
 /**
  * Baca/dengar: perekam, yang diundang, atau superadmin. Admin biasa sengaja tidak termasuk: rekaman
@@ -49,9 +56,12 @@ export async function findReadable(user: User, uuid: string) {
     .select()
     .from(sesi)
     .where(
-      user.role === "superadmin"
-        ? eq(sesi.uuid, uuid)
-        : and(eq(sesi.uuid, uuid), or(eq(sesi.userId, user.id), diundang(user))),
+      and(
+        user.role === "superadmin"
+          ? eq(sesi.uuid, uuid)
+          : and(eq(sesi.uuid, uuid), or(eq(sesi.userId, user.id), diundang(user))),
+        await filterModul(),
+      ),
     )
     .limit(1);
   return row;

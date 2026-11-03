@@ -7,6 +7,7 @@ import { db } from "../db/index.js";
 import { permintaanSesi, sesi } from "../db/schema.js";
 import { bisaBuatSesiLangsung } from "../permissions.js";
 import { audioMime, requireSupervisiMeta, sesiSpecShape } from "../sesi-spec.js";
+import { filterModulPermintaan, modulSupervisiAktif } from "../pengaturan.js";
 
 const MAX_MENUNGGU_PER_USER = 5;
 
@@ -28,7 +29,7 @@ export const permintaanRoutes = new Hono<AuthEnv>()
     const rows = await db
       .select()
       .from(permintaanSesi)
-      .where(eq(permintaanSesi.userId, c.var.user.id))
+      .where(and(eq(permintaanSesi.userId, c.var.user.id), await filterModulPermintaan()))
       .orderBy(desc(permintaanSesi.createdAt))
       .limit(100);
     return c.json(rows);
@@ -36,6 +37,9 @@ export const permintaanRoutes = new Hono<AuthEnv>()
   .post("/", zValidator("json", createBody), async (c) => {
     const user = c.var.user;
     if (bisaBuatSesiLangsung(user)) return c.json({ error: "tidak_perlu_permintaan" }, 409);
+    if (c.req.valid("json").tipe_sesi === "supervisi_kelas" && !(await modulSupervisiAktif())) {
+      return c.json({ error: "modul_nonaktif", modul: "supervisi" }, 403);
+    }
 
     const [{ menunggu = 0 } = {}] = await db
       .select({ menunggu: sql<number>`count(*)` })
@@ -68,6 +72,9 @@ export const permintaanRoutes = new Hono<AuthEnv>()
         where: and(eq(permintaanSesi.id, id), eq(permintaanSesi.userId, c.var.user.id)),
       });
       if (!p) return c.json({ error: "not_found" }, 404);
+      if (p.tipeSesi === "supervisi_kelas" && !(await modulSupervisiAktif())) {
+        return c.json({ error: "modul_nonaktif", modul: "supervisi" }, 403);
+      }
       if (p.status !== "disetujui" || p.durasiDiizinkanMenit === null) {
         return c.json({ error: "belum_disetujui", status: p.status }, 409);
       }

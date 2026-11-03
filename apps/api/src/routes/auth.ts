@@ -7,6 +7,8 @@ import { createSession, destroySession, requireAuth } from "../auth/session.js";
 import { db } from "../db/index.js";
 import { gtk, gtkUnit, users } from "../db/schema.js";
 import { env, isProd } from "../env.js";
+import { bisaBuatSesiLangsung, MODERATOR } from "../permissions.js";
+import { modulSupervisiAktif } from "../pengaturan.js";
 
 const TX_PATH = "/auth/google";
 const rand = () => randomBytes(32).toString("base64url");
@@ -90,9 +92,23 @@ export const auth = new Hono()
     const { id, email, name, picture, role } = c.var.user;
     // Nama resmi dan unit dari direktori SIM-GTK (kosong bila email belum ada di SIM-GTK / belum disinkronkan).
     const e = email.toLowerCase();
-    const [resmi, units] = await Promise.all([
+    const [resmi, units, supervisi] = await Promise.all([
       db.query.gtk.findFirst({ where: eq(gtk.email, e) }),
       db.select({ unit: gtkUnit.unit }).from(gtkUnit).where(eq(gtkUnit.email, e)),
+      modulSupervisiAktif(),
     ]);
-    return c.json({ id, email, name, picture, role, namaResmi: resmi?.namaResmi ?? null, units: units.map((u) => u.unit) });
+    return c.json({
+      id,
+      email,
+      name,
+      picture,
+      role,
+      namaResmi: resmi?.namaResmi ?? null,
+      units: units.map((u) => u.unit),
+      // Dihitung di server supaya UI tidak menduplikasi aturan izin.
+      bisaBuatSesiLangsung: bisaBuatSesiLangsung(c.var.user),
+      moderator: MODERATOR.includes(role),
+      // Saklar modul (superadmin yang mengubah). UI menyembunyikan fitur modul yang mati; server tetap menegakkan.
+      modul: { supervisi },
+    });
   });

@@ -2,16 +2,18 @@ import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
 import { Readable } from "node:stream";
 import { zValidator } from "@hono/zod-validator";
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, getTableColumns, or } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
-import { findOwn, findReadable } from "../akses.js";
+import { diundang, findOwn, findReadable } from "../akses.js";
 import type { AuthEnv } from "../auth/session.js";
 import { db } from "../db/index.js";
-import { actionItems, dokumen, transkrip } from "../db/schema.js";
+import { actionItems, dokumen, gtk, sesi, transkrip, users } from "../db/schema.js";
 import { audioStorage } from "../storage.js";
+import { emailBaku } from "../validasi.js";
 
 const uuidParam = z.object({ uuid: z.uuid() });
+const tugasParam = z.object({ uuid: z.uuid(), id: z.coerce.number().int().positive() });
 
 const RANGE = /^bytes=(\d*)-(\d*)$/;
 
@@ -73,8 +75,9 @@ export const hasilRoutes = new Hono<AuthEnv>()
       return c.json({ error: "belum_tersedia", status: s.status }, 404);
     }
     const items = await db
-      .select()
+      .select({ ...getTableColumns(actionItems), picNamaResmi: gtk.namaResmi })
       .from(actionItems)
+      .leftJoin(gtk, eq(gtk.email, actionItems.picEmail))
       .where(eq(actionItems.dokumenId, d.id))
       .orderBy(asc(actionItems.id));
     return c.json({
@@ -96,6 +99,50 @@ export const hasilRoutes = new Hono<AuthEnv>()
     if (res.affectedRows === 0) return c.json({ error: "tidak_ada_draf" }, 409);
     return c.json({ ok: true });
   })
+  // Perekam menandai penanggung jawab (PIC) sebuah tugas dari direktori GTK. pic_email null = melepas tanda.
+  .patch(
+    "/:uuid/tugas/:id",
+    zValidator("param", tugasParam),
+    zValidator("json", z.object({ pic_email: emailBaku.nullable() })),
+    async (c) => {
+      const { uuid, id } = c.req.valid("param");
+      const { pic_email } = c.req.valid("json");
+      const s = await findOwn(c.var.user, uuid);
+      if (!s) return c.json({ error: "not_found" }, 404);
+
+      // Tugas harus milik dokumen sesi ini.
+      const [item] = await db
+        .select({ id: actionItems.id })
+        .from(actionItems)
+        .innerJoin(dokumen, eq(dokumen.id, actionItems.dokumenId))
+        .where(and(eq(actionItems.id, id), eq(dokumen.sesiId, s.id)))
+        .limit(1);
+      if (!item) return c.json({ error: "not_found" }, 404);
+
+      const [pengguna] = pic_email
+        ? await db.select({ id: users.id }).from(users).where(eq(users.email, pic_email)).limit(1)
+        : [];
+      await db
+        .update(actionItems)
+        .set({ picEmail: pic_email, picUserId: pengguna?.id ?? null })
+        .where(eq(actionItems.id, item.id));
+
+      const [resmi] = pic_email
+        ? await db.select({ nama: gtk.namaResmi }).from(gtk).where(eq(gtk.email, pic_email)).limit(1)
+        : [];
+      // Sudah bisakah orang itu membaca rekaman ini (perekam, atau diundang)? UI menawarkan undangan bila belum.
+      let bisaMembaca: boolean | null = null;
+      if (pic_email) {
+        const [r] = await db
+          .select({ id: sesi.id })
+          .from(sesi)
+          .where(and(eq(sesi.id, s.id), or(eq(sesi.userId, pengguna?.id ?? 0), diundang({ email: pic_email }))))
+          .limit(1);
+        bisaMembaca = Boolean(r);
+      }
+      return c.json({ id: item.id, picEmail: pic_email, picNamaResmi: resmi?.nama ?? null, bisaMembaca });
+    },
+  )
   .get("/:uuid/audio", zValidator("param", uuidParam), async (c) => {
     const s = await findReadable(c.var.user, c.req.valid("param").uuid);
     if (!s) return c.json({ error: "not_found" }, 404);

@@ -8,6 +8,20 @@
       "when": 1793709219865,
       "tag": "0000_freezing_dark_phoenix",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1793712922277,
+      "tag": "0001_cool_turbo",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1793713694397,
+      "tag": "0002_secret_franklin_storm",
+      "breakpoints": true
     }
   ]
 }

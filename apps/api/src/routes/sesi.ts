@@ -9,6 +9,7 @@ import { db } from "../db/index.js";
 import { audioChunks, sesi, users } from "../db/schema.js";
 import { bisaBuatSesiLangsung } from "../permissions.js";
 import { audioMime, requireSupervisiMeta, sesiSpecShape } from "../sesi-spec.js";
+import { filterModul, modulSupervisiAktif } from "../pengaturan.js";
 import { audioStorage, chunkKey } from "../storage.js";
 import { hasilRoutes } from "./hasil.js";
 import { undanganRoutes } from "./undangan.js";
@@ -34,6 +35,8 @@ const chunkParam = z.object({
 const finishBody = z.object({
   jumlah_chunk: z.number().int().min(1).max(MAX_CHUNK_SEQ + 1),
   durasi_detik: z.number().int().min(0).max(24 * 3600),
+  // Momen penting yang ditandai perekam (detik sejak awal rekaman); AI diminta memperhatikannya.
+  penanda_detik: z.array(z.number().int().min(0).max(24 * 3600)).max(200).default([]),
 });
 
 export const sesiRoutes = new Hono<AuthEnv>()
@@ -47,9 +50,10 @@ export const sesiRoutes = new Hono<AuthEnv>()
         status: sesi.status,
         durasiDetik: sesi.durasiDetik,
         createdAt: sesi.createdAt,
+        metadata: sesi.metadata,
       })
       .from(sesi)
-      .where(eq(sesi.userId, c.var.user.id))
+      .where(and(eq(sesi.userId, c.var.user.id), await filterModul()))
       .orderBy(desc(sesi.createdAt))
       .limit(100);
     return c.json(rows);
@@ -65,11 +69,12 @@ export const sesiRoutes = new Hono<AuthEnv>()
         status: sesi.status,
         durasiDetik: sesi.durasiDetik,
         createdAt: sesi.createdAt,
+        metadata: sesi.metadata,
         perekam: { id: users.id, name: users.name },
       })
       .from(sesi)
       .innerJoin(users, eq(users.id, sesi.userId))
-      .where(and(ne(sesi.userId, c.var.user.id), diundang(c.var.user)))
+      .where(and(ne(sesi.userId, c.var.user.id), diundang(c.var.user), await filterModul()))
       .orderBy(desc(sesi.createdAt))
       .limit(100);
     return c.json(rows);
@@ -79,6 +84,9 @@ export const sesiRoutes = new Hono<AuthEnv>()
     const b = c.req.valid("json");
     if (!bisaBuatSesiLangsung(user)) {
       return c.json({ error: "perlu_persetujuan", petunjuk: "ajukan lewat POST /permintaan" }, 403);
+    }
+    if (b.tipe_sesi === "supervisi_kelas" && !(await modulSupervisiAktif())) {
+      return c.json({ error: "modul_nonaktif", modul: "supervisi" }, 403);
     }
     const uuid = crypto.randomUUID();
     await db.insert(sesi).values({
@@ -100,12 +108,20 @@ export const sesiRoutes = new Hono<AuthEnv>()
       .from(audioChunks)
       .where(eq(audioChunks.sesiId, s.id))
       .orderBy(asc(audioChunks.seq));
+    const pemilik = s.userId === c.var.user.id;
     return c.json({
       uuid: s.uuid,
       tipeSesi: s.tipeSesi,
       judul: s.judul,
+      metadata: s.metadata,
       status: s.status,
       durasiDetik: s.durasiDetik,
+      maksDurasiDetik: s.maksDurasiDetik,
+      adalahPerekam: pemilik,
+      audioTersedia: s.audioPath !== null,
+      // Detail galat pemrosesan hanya untuk perekam; yang diundang tidak perlu melihatnya.
+      galat: pemilik ? s.galat : null,
+      createdAt: s.createdAt,
       chunks: chunks.map((r) => r.seq),
     });
   })
@@ -137,7 +153,7 @@ export const sesiRoutes = new Hono<AuthEnv>()
   )
   .post("/:uuid/finish", zValidator("param", uuidParam), zValidator("json", finishBody), async (c) => {
     const { uuid } = c.req.valid("param");
-    const { jumlah_chunk, durasi_detik } = c.req.valid("json");
+    const { jumlah_chunk, durasi_detik, penanda_detik } = c.req.valid("json");
     const s = await findOwn(c.var.user, uuid);
     if (!s) return c.json({ error: "not_found" }, 404);
     if (s.status !== "merekam") return c.json({ error: "sesi_sudah_ditutup" }, 409);
@@ -161,6 +177,7 @@ export const sesiRoutes = new Hono<AuthEnv>()
         status: "mentranskrip",
         durasiDetik: durasi_detik,
         audioSizeBytes: chunks.reduce((n, r) => n + r.size, 0),
+        metadata: penanda_detik.length ? { ...s.metadata, penanda: [...new Set(penanda_detik)].sort((a, b) => a - b) } : s.metadata,
       })
       .where(and(eq(sesi.id, s.id), eq(sesi.status, "merekam")));
     if (res.affectedRows === 0) return c.json({ error: "sesi_sudah_ditutup" }, 409);

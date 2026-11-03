@@ -16,6 +16,8 @@ type Sesi = typeof sesi.$inferSelect;
 // Sekolah di Makassar: tanggal dokumen mengikuti zona ini, bukan UTC server.
 const ZONA = "Asia/Makassar";
 const tanggalLokal = (d: Date) => new Intl.DateTimeFormat("sv-SE", { timeZone: ZONA }).format(d);
+/** Detik -> "HH:MM:SS", format penanda waktu di transkrip dan di daftar momen penting. */
+const hms = (detik: number) => new Date(detik * 1000).toISOString().slice(11, 19);
 
 /** Minimal teks bermakna agar transkrip dianggap berisi percakapan (bukan rekaman sunyi/derau). */
 const MIN_KARAKTER_TRANSKRIP = 20;
@@ -75,7 +77,7 @@ export async function tahapTranskripsi(s: Sesi) {
     offset += dur;
   }
 
-  const rawText = semua.map((x) => `[${new Date(x.start * 1000).toISOString().slice(11, 19)}] ${x.text}`).join("\n");
+  const rawText = semua.map((x) => `[${hms(x.start)}] ${x.text}`).join("\n");
   if (semua.map((x) => x.text).join(" ").length < MIN_KARAKTER_TRANSKRIP) {
     throw new GalatPermanen("transkrip kosong: rekaman sunyi atau tidak terdengar");
   }
@@ -112,13 +114,15 @@ export async function tahapAnalisis(s: Sesi) {
   const observer = (await namaResmi(perekam?.email)) ?? perekam?.name;
   const tanggal = tanggalLokal(s.createdAt);
   const durasiMenit = Math.round(s.durasiDetik / 60);
+  // Momen yang ditandai perekam; AI diminta memberi perhatian khusus (PRD FR-04).
+  const momenPenting = meta.penanda?.length ? meta.penanda.map(hms).join(", ") : undefined;
 
   let konteks: Record<string, string | undefined>;
   let metadata: Record<string, unknown>;
   let guruTargetId: number | null = null;
 
   if (s.tipeSesi === "rapat") {
-    konteks = { judul_sesi: s.judul, tanggal, kategori_rapat: meta.kategori };
+    konteks = { judul_sesi: s.judul, tanggal, kategori_rapat: meta.kategori, momen_penting: momenPenting };
     metadata = { judul_rapat: s.judul, tanggal, durasi_menit: durasiMenit, kategori: meta.kategori ?? null };
   } else {
     const guru = (await namaResmi(meta.guruEmail)) ?? meta.guruEmail;
@@ -129,6 +133,7 @@ export async function tahapAnalisis(s: Sesi) {
       mata_pelajaran: meta.mapel,
       kelas: meta.kelas,
       materi_pembelajaran: meta.materi,
+      momen_penting: momenPenting,
       observer,
     };
     metadata = {

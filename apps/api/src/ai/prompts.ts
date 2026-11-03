@@ -11,7 +11,8 @@ PRINSIP PENULISAN:
    - "tugas": Kalimat perintah yang jelas dan dapat diukur.
    - "pic": Nama orang yang ditugaskan (jika tidak eksplisit, tentukan berdasarkan konteks jabatan/bidang yang dibahas).
    - "tenggat_waktu": Tanggal target (format YYYY-MM-DD jika disebut, atau teks relatif "Sebelum PTS", "Pekan depan").
-4. Output WAJIB berupa JSON murni yang valid tanpa pembungkus markdown (tanpa \`\`\`json).
+4. Jika input memuat "momen_penting" (penanda waktu yang ditandai notulis saat rapat berlangsung), beri perhatian khusus pada percakapan di sekitar waktu tersebut dan pastikan keputusan atau tugas pada momen itu tercakup.
+5. Output WAJIB berupa JSON murni yang valid tanpa pembungkus markdown (tanpa \`\`\`json).
 
 FORMAT OUTPUT (JSON):
 {
@@ -40,7 +41,8 @@ PRINSIP:
 3. Skala skor 1-4: 1 = belum tampak, 2 = mulai berkembang, 3 = sesuai harapan, 4 = sangat baik. Skor adalah bilangan bulat, atau null bila tidak teramati.
 4. Nada konstruktif dan menghargai. Praktik baik disebut spesifik. Saran pengembangan konkret, dapat dilakukan pada pertemuan berikutnya, bukan kritik umum.
 5. Jangan menyebut nama murid; gunakan "seorang murid" atau "kelompok B".
-6. Output WAJIB berupa JSON murni yang valid tanpa pembungkus markdown.
+6. Jika input memuat "momen_penting" (penanda waktu yang ditandai kepala sekolah saat observasi), beri perhatian khusus pada kejadian di sekitar waktu tersebut dan rujuk momen itu di bukti, praktik baik, atau pertanyaan reflektif.
+7. Output WAJIB berupa JSON murni yang valid tanpa pembungkus markdown.
 
 RUBRIK:
 - kegiatan_pendahuluan: apersepsi, motivasi, penyampaian tujuan pembelajaran.

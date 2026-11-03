@@ -6,6 +6,7 @@ import { sesiRoutes } from "./routes/sesi.js";
 import { permintaanRoutes } from "./routes/permintaan.js";
 import { admin } from "./routes/admin.js";
 import { grupRoutes } from "./routes/grup.js";
+import { gtkRoutes } from "./routes/gtk.js";
 
 export const app = new Hono()
   .use(cors({ origin: env.APP_URL, credentials: true }))
@@ -22,6 +23,7 @@ export const app = new Hono()
   .route("/sesi", sesiRoutes)
   .route("/permintaan", permintaanRoutes)
   .route("/grup", grupRoutes)
+  .route("/gtk", gtkRoutes)
   .route("/admin", admin);
 
 export type AppType = typeof app;

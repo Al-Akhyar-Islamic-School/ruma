@@ -68,6 +68,8 @@ export type SesiMetadata = {
   kelas?: string;
   mapel?: string;
   materi?: string;
+  /** Detik sejak awal rekaman yang ditandai perekam sebagai momen penting (diisi saat finish). */
+  penanda?: number[];
 };
 
 export const sesi = mysqlTable(
@@ -197,6 +199,8 @@ export const actionItems = mysqlTable("kalam_action_items", {
   tugas: text("tugas").notNull(),
   picNama: varchar("pic_nama", { length: 150 }).notNull(),
   picUserId: ref("pic_user_id").references(() => users.id),
+  // Orang yang ditandai sebagai PIC dari direktori GTK (bisa belum pernah login). `picNama` tetap teks asli dari AI.
+  picEmail: varchar("pic_email", { length: 255 }),
   tenggatWaktu: date("tenggat_waktu", { mode: "string" }),
   status: mysqlEnum("status", ["pending", "proses", "selesai"]).notNull().default("pending"),
   createdAt: createdAt(),
@@ -291,3 +295,11 @@ export const sesiUndangan = mysqlTable(
     index("undangan_grup_idx").on(t.grupId),
   ],
 );
+
+/** Pengaturan aplikasi (kunci -> nilai JSON), mis. saklar modul. Diubah superadmin lewat /admin/pengaturan. */
+export const pengaturan = mysqlTable("kalam_pengaturan", {
+  kunci: varchar("kunci", { length: 64 }).primaryKey(),
+  nilai: json("nilai").$type<unknown>().notNull(),
+  diubahOleh: ref("diubah_oleh").references(() => users.id),
+  updatedAt: updatedAt(),
+});

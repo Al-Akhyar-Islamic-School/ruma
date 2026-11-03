@@ -6,6 +6,7 @@ import { requireAuth, requireRole, type AuthEnv } from "../auth/session.js";
 import { db } from "../db/index.js";
 import { permintaanSesi, PERMINTAAN_STATUS, ROLES, sesi, transkrip, users } from "../db/schema.js";
 import { MODERATOR } from "../permissions.js";
+import { filterModul, filterModulPermintaan, modulSupervisiAktif, riwayatModulSupervisi, setModulSupervisi } from "../pengaturan.js";
 import { SimgtkTidakDikonfigurasi, SinkronSedangBerjalan, sinkronGtk, statusGtk } from "../simgtk.js";
 
 const WAKTU_PERSETUJUAN_DEFAULT_MS = 7 * 24 * 60 * 60 * 1000;
@@ -44,7 +45,7 @@ export const admin = new Hono<AuthEnv>()
         })
         .from(permintaanSesi)
         .innerJoin(users, eq(users.id, permintaanSesi.userId))
-        .where(eq(permintaanSesi.status, c.req.valid("query").status))
+        .where(and(eq(permintaanSesi.status, c.req.valid("query").status), await filterModulPermintaan()))
         .orderBy(desc(permintaanSesi.createdAt))
         .limit(200);
       return c.json(rows);
@@ -150,7 +151,7 @@ export const admin = new Hono<AuthEnv>()
         })
         .from(sesi)
         .innerJoin(users, eq(users.id, sesi.userId))
-        .where(user_id ? eq(sesi.userId, user_id) : undefined)
+        .where(and(user_id ? eq(sesi.userId, user_id) : undefined, await filterModul()))
         .orderBy(desc(sesi.createdAt))
         .limit(200);
       return c.json(rows);
@@ -186,7 +187,7 @@ export const admin = new Hono<AuthEnv>()
       })
       .from(sesi)
       .innerJoin(users, eq(users.id, sesi.userId))
-      .where(inArray(sesi.status, ["mentranskrip", "menganalisis", "gagal"]))
+      .where(and(inArray(sesi.status, ["mentranskrip", "menganalisis", "gagal"]), await filterModul()))
       .orderBy(desc(sesi.createdAt))
       .limit(200);
     return c.json(rows);
@@ -209,4 +210,18 @@ export const admin = new Hono<AuthEnv>()
       })
       .where(and(eq(sesi.id, s.id), eq(sesi.status, "gagal")));
     return c.json({ uuid: s.uuid, status: t ? "menganalisis" : "mentranskrip" });
-  });
+  })
+
+  // --- Pengaturan modul (hanya superadmin) ---
+  .get("/pengaturan", requireRole("superadmin"), async (c) =>
+    c.json({ modulSupervisi: await modulSupervisiAktif(), terakhirDiubah: await riwayatModulSupervisi() }),
+  )
+  .patch(
+    "/pengaturan",
+    requireRole("superadmin"),
+    zValidator("json", z.object({ modul_supervisi: z.boolean() })),
+    async (c) => {
+      await setModulSupervisi(c.req.valid("json").modul_supervisi, c.var.user.id);
+      return c.json({ modulSupervisi: await modulSupervisiAktif(), terakhirDiubah: await riwayatModulSupervisi() });
+    },
+  );
