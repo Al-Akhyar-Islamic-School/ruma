@@ -120,10 +120,12 @@ export function RincianPermintaan({ p, atas, children }: { p: DataPermintaan; at
           <p className="whitespace-pre-line break-words text-sm">{p.alasan}</p>
         </div>
         <dl className="space-y-0.5 text-sm">
-          <Baris label="Durasi diminta:">{formatMenit(p.durasiDimintaMenit)}</Baris>
+          <Baris label="Perkiraan durasi:">{formatMenit(p.durasiDimintaMenit)}</Baris>
           <Baris label="Diajukan:">{formatTanggalJam(p.createdAt)}</Baris>
           {keputusan && p.status === "disetujui" && p.durasiDiizinkanMenit !== null && (
-            <Baris label="Durasi diizinkan:">{formatMenit(p.durasiDiizinkanMenit)}</Baris>
+            <Baris label="Durasi diizinkan:">
+              {formatMenit(p.durasiDiizinkanMenit)} <span className="text-xs font-normal text-muted-foreground">+15 menit toleransi</span>
+            </Baris>
           )}
           {keputusan && p.status === "disetujui" && p.berlakuSampai && (
             <Baris label="Berlaku sampai:">{formatTanggalJam(p.berlakuSampai)}</Baris>

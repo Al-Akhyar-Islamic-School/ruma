@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { formatTimer } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { batasHentiDetik, formatMenitDetik, TOLERANSI_DETIK, type TahapBatas, tahapBatas } from "./batas-durasi";
 import { BukuBesar } from "./buku-besar";
 import { hapusSesiLokal, pastikanSesiLokal, simpanChunk, ubahSesiLokal } from "./db";
 import { DialogKonfirmasi } from "./dialog-konfirmasi";
@@ -22,6 +23,13 @@ import { Waveform } from "./waveform";
 
 const PENANDA_MAKS = 200;
 const DURASI_MAKS_DETIK = 24 * 3600;
+
+const PESAN_TAHAP: Record<TahapBatas, string> = {
+  normal: "",
+  "sepuluh-menit": "Batas rekaman kurang dari 10 menit lagi.",
+  "lima-menit": "Batas rekaman kurang dari 5 menit lagi.",
+  "lewat-batas": "Melewati batas izin. Rekaman berhenti otomatis setelah toleransi 15 menit habis.",
+};
 const KONFIRMASI_SELESAI_MS = 3_000;
 
 export type PropsLayarRekam = {
@@ -81,13 +89,32 @@ export function LayarRekam({ uuid, userId, judul, tipeSesi, subjudul, maksDurasi
 
   const perekam = usePerekam({
     mime,
-    maksDurasiDetik,
+    // Berhenti otomatis di batas + toleransi, bukan di batas yang disetujui; tampilan sisa waktu tetap memakai batas asli.
+    maksDurasiDetik: batasHentiDetik(maksDurasiDetik),
     onPotongan: simpanPotongan,
     onBatasDurasi: () => void selesaikan(true),
   });
   const { fase } = perekam;
+  const batas = tahapBatas(perekam.detik, maksDurasiDetik);
+  const tahapDiumumkan = useRef({ sepuluh: false, lima: false, lewat: false });
   const pra = usePraRekam({ aktif: fase === "siap" && dukungan.ok, maksDurasiDetik });
   const sedangMerekam = fase === "merekam" || fase === "dijeda";
+
+  // Toast sekali per ambang (dilacak dengan ref) dan tidak diulang saat rekaman dijeda lalu dilanjutkan.
+  useEffect(() => {
+    if (!sedangMerekam) return;
+    const sudah = tahapDiumumkan.current;
+    if (batas.tahap === "lewat-batas" && !sudah.lewat) {
+      sudah.lewat = sudah.lima = sudah.sepuluh = true;
+      toast.error("Melewati batas izin. Rekaman berhenti otomatis dalam 15 menit.");
+    } else if (batas.tahap === "lima-menit" && !sudah.lima) {
+      sudah.lima = sudah.sepuluh = true;
+      toast.warning("Batas rekaman tinggal 5 menit");
+    } else if (batas.tahap === "sepuluh-menit" && !sudah.sepuluh) {
+      sudah.sepuluh = true;
+      toast.warning("Batas rekaman tinggal 10 menit");
+    }
+  }, [batas.tahap, sedangMerekam]);
   const layarMenyala = useWakeLock(sedangMerekam);
 
   // Tombol kembali / tutup tab saat merekam: peringatkan dulu. Rekaman yang ditinggalkan bisa dilanjutkan dari beranda.
@@ -104,7 +131,7 @@ export function LayarRekam({ uuid, userId, judul, tipeSesi, subjudul, maksDurasi
     sedangSelesai.current = true;
     setMenutup(true);
     setMenungguKonfirmasi(false);
-    if (otomatis) toast.info("Batas durasi tercapai. Rekaman diselesaikan otomatis.");
+    if (otomatis) toast.info("Batas toleransi tercapai. Rekaman diselesaikan otomatis.");
 
     const hasil = await perekam.berhenti();
     if (hasil.jumlahChunk === 0) {
@@ -113,7 +140,7 @@ export function LayarRekam({ uuid, userId, judul, tipeSesi, subjudul, maksDurasi
       setKosong(true);
       return;
     }
-    const durasiDetik = Math.min(hasil.detik, maksDurasiDetik ?? DURASI_MAKS_DETIK, DURASI_MAKS_DETIK);
+    const durasiDetik = Math.min(hasil.detik, batasHentiDetik(maksDurasiDetik) ?? DURASI_MAKS_DETIK, DURASI_MAKS_DETIK);
     const hasilRencana: RencanaKirim = {
       jumlahChunk: hasil.jumlahChunk,
       durasiDetik,
@@ -231,7 +258,6 @@ export function LayarRekam({ uuid, userId, judul, tipeSesi, subjudul, maksDurasi
   }
 
   const siap = fase === "siap" || fase === "meminta-izin";
-  const sisa = maksDurasiDetik === null ? null : Math.max(0, maksDurasiDetik - perekam.detik);
   const label = menutup
     ? "Menyimpan potongan terakhir…"
     : { siap: "Siap merekam", "meminta-izin": "Menunggu izin mikrofon…", merekam: "Merekam", dijeda: "Dijeda", terhenti: "Rekaman terhenti", berhenti: "Selesai" }[fase];
@@ -264,10 +290,44 @@ export function LayarRekam({ uuid, userId, judul, tipeSesi, subjudul, maksDurasi
           {label}
         </p>
 
-        {sisa !== null && !menutup && (
-          <p className={cn("rounded-full bg-card px-3 py-1 text-xs font-medium ring-1 ring-border", sisa <= 60 ? "text-destructive" : sisa <= 300 ? "text-warning" : "text-muted-foreground")}>
-            {siap ? "Batas rekaman" : "Sisa waktu"} <span className="font-mono tabular-nums">{formatTimer(siap ? (maksDurasiDetik ?? 0) : sisa)}</span>
-          </p>
+        {maksDurasiDetik !== null && !menutup && (
+          <div className="flex flex-col items-center gap-1.5">
+            {siap ? (
+              <p className="rounded-full bg-card px-3 py-1 text-xs font-medium text-muted-foreground ring-1 ring-border">
+                Batas rekaman <span className="font-mono tabular-nums">{formatTimer(maksDurasiDetik)}</span>
+                <span className="block text-[11px] font-normal">+{TOLERANSI_DETIK / 60} menit toleransi</span>
+              </p>
+            ) : batas.tahap === "lewat-batas" ? (
+              <p aria-hidden className="flex items-center gap-1.5 rounded-full bg-destructive/10 px-3 py-1 text-xs font-semibold text-destructive ring-1 ring-destructive/40">
+                <TriangleAlertIcon className="size-3.5 shrink-0" aria-hidden />
+                <span>
+                  Melewati batas izin. Rekaman berhenti otomatis dalam{" "}
+                  <span className="font-mono tabular-nums">{formatMenitDetik(batas.sisaToleransiDetik ?? 0)}</span>
+                </span>
+              </p>
+            ) : (
+              <>
+                <p
+                  className={cn(
+                    "rounded-full bg-card px-3 py-1 text-xs font-medium ring-1 ring-border",
+                    batas.tahap === "lima-menit" ? "text-destructive" : batas.tahap === "sepuluh-menit" ? "text-warning" : "text-muted-foreground",
+                  )}
+                >
+                  Sisa waktu <span className="font-mono tabular-nums">{formatTimer(batas.sisaDetik ?? 0)}</span>
+                </p>
+                {batas.tahap !== "normal" && (
+                  <p aria-hidden className={cn("flex items-center gap-1.5 text-xs font-semibold", batas.tahap === "lima-menit" ? "text-destructive" : "text-warning")}>
+                    <TriangleAlertIcon className="size-3.5 shrink-0" aria-hidden />
+                    {batas.tahap === "lima-menit" ? "Batas rekaman kurang dari 5 menit lagi" : "Batas rekaman kurang dari 10 menit lagi"}
+                  </p>
+                )}
+              </>
+            )}
+            {/* Pengumuman tahap hanya berubah di ambang, bukan tiap detik; hitung mundur visual disembunyikan dari pembaca layar. */}
+            <p role="status" aria-live="polite" className="sr-only">
+              {PESAN_TAHAP[batas.tahap]}
+            </p>
+          </div>
         )}
 
         <Waveform analyser={perekam.analyser} aktif={fase === "merekam"} className="h-24 w-full max-w-md" />

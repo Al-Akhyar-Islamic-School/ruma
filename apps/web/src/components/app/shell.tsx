@@ -78,12 +78,14 @@ function MenuSamping({ open, onClose, me }: { open: boolean; onClose: () => void
 
   async function keluar() {
     try {
-      await ok(await api.auth.logout.$post());
-      qc.clear();
-      qc.setQueryData(meQuery.queryKey, null);
-      hapusCadanganMe();
       onClose();
-      await navigate({ to: "/login", search: { error: undefined } });
+      await ok(await api.auth.logout.$post());
+      hapusCadanganMe();
+      // Pindah halaman LEBIH DULU sebelum cache di-clear. Bila cache dibersihkan duluan, komponen di dalam _app
+      // yang memanggil useMe() (mis. Shell header) re-render dan melempar "Belum login", memicu error boundary
+      // layar penuh sesaat ("Terjadi kesalahan") tepat sebelum navigasi selesai.
+      await navigate({ to: "/login", search: { error: undefined }, replace: true });
+      qc.removeQueries({ queryKey: meQuery.queryKey });
     } catch (e) {
       toast.error(pesanGalat(e));
     }

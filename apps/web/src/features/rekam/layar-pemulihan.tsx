@@ -4,6 +4,7 @@ import { LoaderCircleIcon, TriangleAlertIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { batasHentiDetik } from "./batas-durasi";
 import { awalanBerurutan, hapusSesiLokal, ringkasChunk, type SesiLokal, ubahSesiLokal } from "./db";
 import { DialogKonfirmasi } from "./dialog-konfirmasi";
 import { KerangkaGelap } from "./kerangka";
@@ -61,7 +62,7 @@ export function LayarPemulihan({
         const tersimpan = lokal?.durasiDetik ?? 0;
         const rencana: RencanaKirim = {
           jumlahChunk,
-          durasiDetik: Math.min(tersimpan > 0 ? tersimpan : jumlahChunk * DETIK_PER_POTONGAN, maksDurasiDetik ?? DURASI_MAKS_DETIK, DURASI_MAKS_DETIK),
+          durasiDetik: Math.min(tersimpan > 0 ? tersimpan : jumlahChunk * DETIK_PER_POTONGAN, batasHentiDetik(maksDurasiDetik) ?? DURASI_MAKS_DETIK, DURASI_MAKS_DETIK),
           penanda: lokal?.penanda ?? [],
         };
         if (lokal) await ubahSesiLokal(uuid, { status: "menunggu-kirim", ...rencana }).catch(() => undefined);

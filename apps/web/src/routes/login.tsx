@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { AudioLinesIcon, TriangleAlertIcon } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { API_URL } from "@/lib/api";
 import { meQuery } from "@/lib/auth";
@@ -22,6 +23,7 @@ export const Route = createFileRoute("/login")({
     // Sudah login: tidak perlu melihat halaman ini.
     if (await context.queryClient.ensureQueryData(meQuery)) throw redirect({ to: "/" });
   },
+  pendingComponent: LoginSkeleton,
   component: Login,
 });
 
@@ -72,6 +74,38 @@ function Login() {
           <a href={`${API_URL}/auth/google`}>Masuk dengan akun Google sekolah</a>
         </Button>
         <p className="text-center text-xs text-muted-foreground">Khusus akun Google Workspace Sekolah Islam Al Akhyar.</p>
+      </div>
+    </main>
+  );
+}
+
+/** Skeleton saat sebelum halaman login siap (atau saat memeriksa sesi untuk redirect). */
+function LoginSkeleton() {
+  return (
+    <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-between px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(3rem,env(safe-area-inset-top))]">
+      <div className="space-y-8">
+        <div className="flex items-center gap-3">
+          <Skeleton className="size-12 rounded-2xl" />
+          <div className="space-y-1.5">
+            <Skeleton className="h-6 w-24 rounded-lg" />
+            <Skeleton className="h-4 w-32 rounded-md" />
+          </div>
+        </div>
+        <div className="space-y-3">
+          <Skeleton className="h-4 w-44 rounded-md" />
+          <Skeleton className="h-16 w-full rounded-2xl" />
+          <Skeleton className="h-12 w-full rounded-xl" />
+          <Skeleton className="h-4 w-60 rounded-md" />
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {Array.from({ length: 5 }, (_, i) => (
+            <Skeleton key={i} className="h-8 w-28 rounded-full" />
+          ))}
+        </div>
+      </div>
+      <div className="space-y-4">
+        <Skeleton className="h-14 w-full rounded-2xl" />
+        <Skeleton className="mx-auto h-3 w-56 rounded-md" />
       </div>
     </main>
   );

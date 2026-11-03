@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { type OrangGtk, PilihOrang } from "@/features/undangan/pilih-orang";
 import { ApiError, api, ok, pesanGalat } from "@/lib/api";
 import { useMe } from "@/lib/auth";
@@ -18,6 +19,8 @@ import { JENIS_LABEL, type MetadataPermintaan, type TipeSesiPermintaan } from ".
 const ALASAN_MIN = 10;
 const ALASAN_MAKS = 2000;
 const DURASI_MAKS = 480;
+const DURASI_CEPAT = [30, 60, 90, 120, 180] as const;
+const LAINNYA = "lainnya";
 const TANPA_KATEGORI = "tanpa";
 
 /** Sheet "Ajukan rekaman". Isinya dipasang hanya saat terbuka sehingga isian selalu mulai dari kosong. */
@@ -47,6 +50,7 @@ function IsiForm({ onSelesai }: { onSelesai: () => void }) {
   const [materi, setMateri] = useState("");
   const [alasan, setAlasan] = useState("");
   const [durasi, setDurasi] = useState("60");
+  const [lainnya, setLainnya] = useState(false);
 
   // Bila modul supervisi dimatikan (bahkan saat form terbuka), mode jatuh ke rapat tanpa mengubah state isian.
   const modulSupervisi = useMe().modul.supervisi;
@@ -184,21 +188,60 @@ function IsiForm({ onSelesai }: { onSelesai: () => void }) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="perm-durasi">Durasi diminta (menit)</Label>
-        <Input
-          id="perm-durasi"
-          className="h-12 font-mono tabular-nums"
-          type="number"
-          inputMode="numeric"
-          min={1}
-          max={DURASI_MAKS}
-          step={1}
-          value={durasi}
-          onChange={(e) => setDurasi(e.target.value)}
+        <span id="perm-durasi-label" className="text-sm leading-none font-medium">
+          Perkiraan durasi rapat
+        </span>
+        <ToggleGroup
+          type="single"
+          value={lainnya ? LAINNYA : durasi}
+          onValueChange={(v) => {
+            // Radix mengirim "" saat item aktif diketuk lagi; abaikan supaya selalu ada satu pilihan.
+            if (!v) return;
+            if (v === LAINNYA) setLainnya(true);
+            else {
+              setLainnya(false);
+              setDurasi(v);
+            }
+          }}
+          aria-labelledby="perm-durasi-label"
           aria-describedby="perm-durasi-info"
-        />
+          className="grid w-full grid-cols-3 gap-1 rounded-2xl bg-secondary p-1"
+        >
+          {DURASI_CEPAT.map((m) => (
+            <ToggleGroupItem
+              key={m}
+              value={String(m)}
+              className="h-12 rounded-xl text-sm font-semibold data-[state=on]:bg-background data-[state=on]:text-primary data-[state=on]:shadow-sm"
+            >
+              {m} menit
+            </ToggleGroupItem>
+          ))}
+          <ToggleGroupItem
+            value={LAINNYA}
+            className="h-12 rounded-xl text-sm font-semibold data-[state=on]:bg-background data-[state=on]:text-primary data-[state=on]:shadow-sm"
+          >
+            Lainnya
+          </ToggleGroupItem>
+        </ToggleGroup>
+        {lainnya && (
+          <div className="space-y-2">
+            <Label htmlFor="perm-durasi">Durasi (menit)</Label>
+            <Input
+              id="perm-durasi"
+              className="h-12 font-mono tabular-nums"
+              type="number"
+              inputMode="numeric"
+              min={1}
+              max={DURASI_MAKS}
+              step={1}
+              value={durasi}
+              onChange={(e) => setDurasi(e.target.value)}
+              aria-describedby="perm-durasi-info"
+            />
+          </div>
+        )}
         <p id="perm-durasi-info" className="text-xs text-muted-foreground">
-          Maksimal {DURASI_MAKS} menit. Admin bisa mengizinkan durasi yang lebih pendek.
+          Ini perkiraan. Admin memberi batas dengan kelonggaran, dan perekam memberi peringatan sebelum batas.
         </p>
       </div>
 

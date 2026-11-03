@@ -150,8 +150,14 @@ function lokalSekarang(): string {
   return d.toISOString().slice(0, 16);
 }
 
+/** Perkiraan × 1,5 dibulatkan ke atas ke kelipatan 15 menit, maksimal `DURASI_MAKS`. 60 -> 90, 90 -> 135, 400 -> 480. */
+export function durasiDisarankan(menit: number): number {
+  return Math.min(DURASI_MAKS, Math.ceil((menit * 1.5) / 15) * 15);
+}
+
 function FormSetujui({ p, onSelesai }: { p: DataPermintaan; onSelesai: () => void }) {
-  const [durasi, setDurasi] = useState(String(Math.min(p.durasiDimintaMenit, DURASI_MAKS)));
+  const disarankan = durasiDisarankan(p.durasiDimintaMenit);
+  const [durasi, setDurasi] = useState(String(disarankan));
   const [sampai, setSampai] = useState("");
   const [catatan, setCatatan] = useState("");
   const putuskan = usePutuskan(p, onSelesai, "Permintaan disetujui");
@@ -190,7 +196,8 @@ function FormSetujui({ p, onSelesai }: { p: DataPermintaan; onSelesai: () => voi
           aria-describedby="setuju-durasi-info"
         />
         <p id="setuju-durasi-info" className={durasiSah ? "text-xs text-muted-foreground" : "text-xs text-destructive"}>
-          Diminta {p.durasiDimintaMenit} menit. Isi 1–{DURASI_MAKS} menit; rekaman otomatis dibatasi sampai durasi ini.
+          Diminta {p.durasiDimintaMenit} menit; disarankan {disarankan} menit (dengan kelonggaran 50%). Isi 1–{DURASI_MAKS} menit. Rekaman diberi
+          peringatan sebelum batas dan toleransi 15 menit tambahan sebelum berhenti otomatis.
         </p>
       </div>
 

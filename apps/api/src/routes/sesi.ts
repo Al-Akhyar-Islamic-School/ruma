@@ -20,13 +20,19 @@ const MAX_CHUNK_BYTES = 2 * 1024 * 1024;
 const MAX_CHUNK_SEQ = 20_000;
 // Panjang potongan rekaman klien (ARCHITECTURE.md §2.2). Dipakai menurunkan batas jumlah chunk dari batas durasi.
 const CHUNK_SECONDS = 30;
+/**
+ * Toleransi setelah batas durasi yang disetujui: rapat sering molor, dan memotong rekaman di tengah rapat adalah
+ * kerugian terbesar. Klien memperingatkan sebelum batas dan berhenti sendiri di batas + toleransi; server menjadi
+ * pagar yang tak bisa dipalsukan di titik yang sama. Nilai yang sama ada di apps/web (`features/rekam/batas-durasi.ts`).
+ */
+const TOLERANSI_DURASI_DETIK = 15 * 60;
 
 const createBody = z
   .object({ ...sesiSpecShape, audio_mime: audioMime })
   .superRefine(requireSupervisiMeta);
 
 /** Jumlah chunk maksimum untuk batas durasi; +2 untuk chunk terakhir yang parsial dan jeda pause/resume. */
-const maxChunks = (maksDurasiDetik: number) => Math.ceil(maksDurasiDetik / CHUNK_SECONDS) + 2;
+const maxChunks = (maksDurasiDetik: number) => Math.ceil((maksDurasiDetik + TOLERANSI_DURASI_DETIK) / CHUNK_SECONDS) + 2;
 
 const uuidParam = z.object({ uuid: z.uuid() });
 const chunkParam = z.object({
@@ -173,7 +179,10 @@ export const sesiRoutes = new Hono<AuthEnv>()
     if (!s) return c.json({ error: "not_found" }, 404);
     if (s.status !== "merekam") return c.json({ error: "sesi_sudah_ditutup" }, 409);
     // durasi_detik dilaporkan klien; batas jumlah chunk di unggahan menjadi pagar yang tidak bisa dipalsukan.
-    if (s.maksDurasiDetik !== null && (durasi_detik > s.maksDurasiDetik || jumlah_chunk > maxChunks(s.maksDurasiDetik))) {
+    if (
+      s.maksDurasiDetik !== null &&
+      (durasi_detik > s.maksDurasiDetik + TOLERANSI_DURASI_DETIK || jumlah_chunk > maxChunks(s.maksDurasiDetik))
+    ) {
       return c.json({ error: "melebihi_durasi_izin", maksDurasiDetik: s.maksDurasiDetik }, 409);
     }
 
