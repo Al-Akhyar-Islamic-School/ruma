@@ -144,6 +144,13 @@ Yang bisa membaca/mendengar sebuah sesi: **perekamnya**, **orang yang diundang**
 - **Kategori rapat** dikelola superadmin (`kalam_kategori_rapat`): `GET /kategori` (semua pengguna, termasuk yang nonaktif agar rekaman lama tetap berlabel), `POST /admin/kategori`, `PATCH /admin/kategori/:id` (nama, `terbatas`, `aktif`; kode slug dibuat server dan tidak berubah). UI: Admin → Kategori rapat. Sesi menyimpan `kode` di `metadata.kategori`; kode yang tak ada atau nonaktif ditolak 422 `kategori_tidak_valid`. Migrasi `0004` mengisi empat kategori bawaan (pleno, kurikulum, komite, pimpinan).
 - Undangan menjadi dasar akses untuk endpoint baca yang akan datang (transkrip, dokumen, pemutar audio): semuanya harus memakai `findReadable` di `src/akses.ts`.
 
+### Knowledge Management (pencarian dan keputusan lintas rapat)
+
+- `GET /pengetahuan/cari?q=` (2–100 karakter; kata dipisah spasi, **semua** kata harus muncul, tak peka huruf besar/kecil; `%` dan `_` diperlakukan literal): mencari judul, ringkasan, keputusan, tugas, dan transkrip. Mengembalikan maks 30 rapat terbaru beserta cuplikan per bagian (transkrip menyertakan `detik`) dan `terpotong` bila ada lebih banyak.
+- `GET /pengetahuan/keputusan?cari=`: daftar keputusan dari maks 100 rapat terbaru, dapat disaring.
+- Aturan akses sama dengan membaca satu sesi (`src/pengetahuan.ts`): perekam, yang diundang, atau superadmin. Dokumen berstatus `draf` hanya terlihat oleh perekam dan superadmin (yang diundang hanya bisa menemukan lewat transkrip, yang memang boleh mereka baca). **Hanya rapat**: lembar supervisi (penilaian individu guru dan suara murid) tidak ikut diindeks lintas sesi; sesi yang masih direkam juga tidak.
+- Pencarian memakai `LIKE` pada transkrip dan dokumen; cukup untuk puluhan sampai ratusan rapat. Bila arsip membesar, ganti dengan indeks FULLTEXT atau mesin pencari tanpa mengubah kontrak endpoint. UI: menu Pengetahuan (`/pengetahuan?q=&tab=`).
+
 ### Sinkronisasi SIM-GTK
 
 Sumber nama resmi dan unit GTK. Hanya membaca SIM-GTK: `GET {SIMGTK_API_URL}/getGuruList` dengan Bearer token (kontrak yang sama dengan e-Rapor dan SPMB). Unit dibaca dari `kode_unit`, `biodata.kode_unit`, atau `biodata.unit_kerja.kode`; `RA` dianggap `TK`, kode di luar TK/SD/SMP/SMA dilaporkan di hasil sinkron tetapi tidak dipakai. Orang dicocokkan lewat **email** (huruf kecil).

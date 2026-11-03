@@ -14,6 +14,8 @@ const ALASAN: Record<string, string> = {
   gagal: "Login gagal karena gangguan di server. Coba lagi sebentar lagi.",
 };
 
+const FUNGSI = ["Transcription", "Meeting Summary", "Action Items", "Decisions", "Knowledge Management"];
+
 export const Route = createFileRoute("/login")({
   validateSearch: (s: Record<string, unknown>) => ({ error: typeof s.error === "string" ? s.error : undefined }),
   beforeLoad: async ({ context }) => {
@@ -49,6 +51,13 @@ function Login() {
           </p>
           <p className="text-sm font-semibold tracking-wide text-muted-foreground">Listen · Understand · Summarize</p>
         </div>
+        <ul aria-label="Fungsi" className="flex flex-wrap gap-2">
+          {FUNGSI.map((f) => (
+            <li key={f} className="rounded-full border bg-card px-3 py-1.5 text-sm font-medium">
+              {f}
+            </li>
+          ))}
+        </ul>
       </div>
 
       <div className="space-y-4">

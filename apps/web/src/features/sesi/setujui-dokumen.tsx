@@ -26,6 +26,7 @@ export function SetujuiDokumen({ uuid }: { uuid: string }) {
       toast.success("Dokumen disetujui");
       setBuka(false);
       await qc.invalidateQueries({ queryKey: dokumenKey });
+      await qc.invalidateQueries({ queryKey: ["pengetahuan"] });
     },
     onError: async (e) => {
       if (e instanceof ApiError && e.kode === "tidak_ada_draf") {

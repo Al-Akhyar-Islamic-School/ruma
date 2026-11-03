@@ -39,6 +39,7 @@ export function IsiSesi({ sesi }: { sesi: DetailSesi }) {
     if (statusSebelumnya.current !== "selesai" && status === "selesai") {
       void qc.invalidateQueries({ queryKey: ["sesi", uuid, "transkrip"] });
       void qc.invalidateQueries({ queryKey: ["sesi", uuid, "dokumen"] });
+      void qc.invalidateQueries({ queryKey: ["pengetahuan"] });
     }
     statusSebelumnya.current = status;
   }, [status, uuid, qc]);

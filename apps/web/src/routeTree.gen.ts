@@ -14,6 +14,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppIndexRouteImport } from './routes/_app.index'
 import { Route as AppAdminRouteImport } from './routes/_app.admin'
 import { Route as AppGrupRouteImport } from './routes/_app.grup'
+import { Route as AppPengetahuanRouteImport } from './routes/_app.pengetahuan'
 import { Route as AppPermintaanRouteImport } from './routes/_app.permintaan'
 import { Route as AppAdminIndexRouteImport } from './routes/_app.admin.index'
 import { Route as AppAdminAntreanRouteImport } from './routes/_app.admin.antrean'
@@ -49,6 +50,11 @@ const AppAdminRoute = AppAdminRouteImport.update({
 const AppGrupRoute = AppGrupRouteImport.update({
   id: '/grup',
   path: '/grup',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPengetahuanRoute = AppPengetahuanRouteImport.update({
+  id: '/pengetahuan',
+  path: '/pengetahuan',
   getParentRoute: () => AppRoute,
 } as any)
 const AppPermintaanRoute = AppPermintaanRouteImport.update({
@@ -117,6 +123,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/admin': typeof AppAdminRouteWithChildren
   '/grup': typeof AppGrupRoute
+  '/pengetahuan': typeof AppPengetahuanRoute
   '/permintaan': typeof AppPermintaanRoute
   '/admin/antrean': typeof AppAdminAntreanRoute
   '/admin/gtk': typeof AppAdminGtkRoute
@@ -133,6 +140,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/grup': typeof AppGrupRoute
+  '/pengetahuan': typeof AppPengetahuanRoute
   '/permintaan': typeof AppPermintaanRoute
   '/': typeof AppIndexRoute
   '/admin/antrean': typeof AppAdminAntreanRoute
@@ -153,6 +161,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/_app/admin': typeof AppAdminRouteWithChildren
   '/_app/grup': typeof AppGrupRoute
+  '/_app/pengetahuan': typeof AppPengetahuanRoute
   '/_app/permintaan': typeof AppPermintaanRoute
   '/_app/': typeof AppIndexRoute
   '/_app/admin/antrean': typeof AppAdminAntreanRoute
@@ -174,6 +183,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/admin'
     | '/grup'
+    | '/pengetahuan'
     | '/permintaan'
     | '/admin/antrean'
     | '/admin/gtk'
@@ -190,6 +200,7 @@ export interface FileRouteTypes {
   to:
     | '/login'
     | '/grup'
+    | '/pengetahuan'
     | '/permintaan'
     | '/'
     | '/admin/antrean'
@@ -209,6 +220,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/_app/admin'
     | '/_app/grup'
+    | '/_app/pengetahuan'
     | '/_app/permintaan'
     | '/_app/'
     | '/_app/admin/antrean'
@@ -264,6 +276,13 @@ declare module '@tanstack/react-router' {
       path: '/grup'
       fullPath: '/grup'
       preLoaderRoute: typeof AppGrupRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/pengetahuan': {
+      id: '/_app/pengetahuan'
+      path: '/pengetahuan'
+      fullPath: '/pengetahuan'
+      preLoaderRoute: typeof AppPengetahuanRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/permintaan': {
@@ -382,6 +401,7 @@ const AppAdminRouteWithChildren = AppAdminRoute._addFileChildren(
 interface AppRouteChildren {
   AppAdminRoute: typeof AppAdminRouteWithChildren
   AppGrupRoute: typeof AppGrupRoute
+  AppPengetahuanRoute: typeof AppPengetahuanRoute
   AppPermintaanRoute: typeof AppPermintaanRoute
   AppIndexRoute: typeof AppIndexRoute
   AppRekamUuidRoute: typeof AppRekamUuidRoute
@@ -392,6 +412,7 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppAdminRoute: AppAdminRouteWithChildren,
   AppGrupRoute: AppGrupRoute,
+  AppPengetahuanRoute: AppPengetahuanRoute,
   AppPermintaanRoute: AppPermintaanRoute,
   AppIndexRoute: AppIndexRoute,
   AppRekamUuidRoute: AppRekamUuidRoute,

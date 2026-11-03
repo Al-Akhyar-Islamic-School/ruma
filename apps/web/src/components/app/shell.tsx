@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Link, Outlet, useNavigate } from "@tanstack/react-router";
-import { HomeIcon, LogOutIcon, MenuIcon, MonitorIcon, MoonIcon, ShieldCheckIcon, SunIcon, UsersIcon, FilePlus2Icon } from "lucide-react";
+import { BookOpenTextIcon, HomeIcon, LogOutIcon, MenuIcon, MonitorIcon, MoonIcon, ShieldCheckIcon, SunIcon, UsersIcon, FilePlus2Icon } from "lucide-react";
 import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -121,6 +121,9 @@ function MenuSamping({ open, onClose, me }: { open: boolean; onClose: () => void
               Permintaan rekaman
             </NavLink>
           )}
+          <NavLink to="/pengetahuan" Ikon={BookOpenTextIcon} onClick={onClose}>
+            Pengetahuan
+          </NavLink>
           <NavLink to="/grup" Ikon={UsersIcon} onClick={onClose}>
             Grup undangan
           </NavLink>
@@ -165,7 +168,7 @@ function NavLink({
   onClick,
   children,
 }: {
-  to: "/" | "/permintaan" | "/grup" | "/admin";
+  to: "/" | "/permintaan" | "/pengetahuan" | "/grup" | "/admin";
   Ikon: typeof HomeIcon;
   onClick: () => void;
   children: string;
