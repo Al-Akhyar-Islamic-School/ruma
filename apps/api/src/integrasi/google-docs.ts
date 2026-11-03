@@ -2,6 +2,7 @@ import { ambilValidAccessToken } from "./google-auth.js";
 
 const DOCS_BASE = "https://docs.googleapis.com/v1/documents";
 const DRIVE_BASE = "https://www.googleapis.com/drive/v3/files";
+const NAMA_FOLDER_DEFAULT = "ruma. Notulen";
 
 export type DataNotulen = {
   judul_notulen?: string;
@@ -13,8 +14,6 @@ export type DataNotulen = {
   agenda_dan_keputusan?: { agenda: string; pembahasan?: string; keputusan: string }[];
   action_items?: { tugas: string; pic?: string; tenggat_waktu?: string | null; status?: string }[];
 };
-
-const NAMA_FOLDER_DEFAULT = "ruma. Notulen";
 
 /** Mencari atau membuat folder khusus ruma. Notulen di Google Drive pengguna */
 async function pastikanFolderRuma(token: string): Promise<string | null> {
@@ -30,7 +29,6 @@ async function pastikanFolderRuma(token: string): Promise<string | null> {
       }
     }
 
-    // Buat folder baru jika belum ada
     const resCreate = await fetch(DRIVE_BASE, {
       method: "POST",
       headers: {
@@ -47,7 +45,7 @@ async function pastikanFolderRuma(token: string): Promise<string | null> {
       return folder.id;
     }
   } catch {
-    // Jika gagal buat/cari folder, dokumen tetap aman berada di Root Drive pengguna
+    // Non-blocking
   }
   return null;
 }
@@ -61,6 +59,12 @@ async function pindahkanKeFolder(token: string, fileId: string, folderId: string
   } catch {
     // Non-blocking
   }
+}
+
+interface StylableRange {
+  start: number;
+  end: number;
+  type: "TITLE" | "SUBTITLE" | "HEADING_1" | "HEADING_2" | "BOLD" | "ITALIC";
 }
 
 export async function eksporKeGoogleDocs(
@@ -79,7 +83,7 @@ export async function eksporKeGoogleDocs(
 
   let fileId = existingFileId;
 
-  // 1. Jika belum ada dokumen yang dibuat, buat dokumen baru via Google Docs API
+  // 1. Buat dokumen jika belum ada
   if (!fileId) {
     const resCreate = await fetch(DOCS_BASE, {
       method: "POST",
@@ -98,81 +102,224 @@ export async function eksporKeGoogleDocs(
     const doc = (await resCreate.json()) as { documentId: string };
     fileId = doc.documentId;
 
-    // Pindahkan berkas baru ke folder "ruma. Notulen" di Google Drive pengguna
     const folderId = await pastikanFolderRuma(token);
     if (folderId) {
       await pindahkanKeFolder(token, fileId, folderId);
     }
+  } else {
+    // Jika dokumen sudah ada, bersihkan konten lama sebelum diisi ulang
+    try {
+      const resGet = await fetch(`${DOCS_BASE}/${fileId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (resGet.ok) {
+        const docObj = (await resGet.json()) as { body?: { content?: { endIndex?: number }[] } };
+        const content = docObj.body?.content || [];
+        const lastElement = content[content.length - 1];
+        const endIndex = (lastElement?.endIndex ?? 1) - 1;
+        if (endIndex > 1) {
+          await fetch(`${DOCS_BASE}/${fileId}:batchUpdate`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              requests: [{ deleteContentRange: { range: { startIndex: 1, endIndex } } }],
+            }),
+          });
+        }
+      }
+    } catch {
+      // Jika pembersihan gagal, tetap lanjutkan
+    }
   }
 
-  // 2. Susun teks konten berformat resmi Al Akhyar
-  const baris: string[] = [];
-  baris.push("SEKOLAH ISLAM AL AKHYAR");
-  baris.push("NOTULENSI RAPAT RESMI");
-  baris.push("================================================================================");
-  baris.push(`Judul Sesi     : ${judulSesi}`);
-  baris.push(`Tanggal Rapat  : ${tanggal}`);
-  if (payload.tempat) baris.push(`Tempat         : ${payload.tempat}`);
-  if (payload.pemimpin_rapat) baris.push(`Pemimpin Rapat : ${payload.pemimpin_rapat}`);
+  // 2. Bangun teks beserta penanda styling
+  let buffer = "";
+  const styles: StylableRange[] = [];
+
+  function tambahTeks(teks: string, style?: StylableRange["type"]) {
+    const startIndex = 1 + buffer.length;
+    buffer += teks;
+    const endIndex = 1 + buffer.length;
+    if (style) {
+      styles.push({ start: startIndex, end: endIndex, type: style });
+    }
+  }
+
+  // Header Dokumen
+  tambahTeks("SEKOLAH ISLAM AL AKHYAR\n", "TITLE");
+  tambahTeks("NOTULENSI RAPAT RESMI\n", "SUBTITLE");
+  tambahTeks("\n");
+
+  // Metadata Rapat
+  tambahTeks("INFORMASI RAPAT\n", "HEADING_2");
+  tambahTeks("Judul Sesi: ", "BOLD");
+  tambahTeks(`${judulSesi}\n`);
+  tambahTeks("Tanggal: ", "BOLD");
+  tambahTeks(`${tanggal}\n`);
+  if (payload.tempat) {
+    tambahTeks("Tempat: ", "BOLD");
+    tambahTeks(`${payload.tempat}\n`);
+  }
+  if (payload.pemimpin_rapat) {
+    tambahTeks("Pemimpin Rapat: ", "BOLD");
+    tambahTeks(`${payload.pemimpin_rapat}\n`);
+  }
   if (payload.peserta_terdeteksi?.length) {
-    baris.push(`Peserta Hadir  : ${payload.peserta_terdeteksi.join(", ")}`);
+    tambahTeks("Peserta Hadir: ", "BOLD");
+    tambahTeks(`${payload.peserta_terdeteksi.join(", ")}\n`);
   }
-  baris.push("--------------------------------------------------------------------------------\n");
+  tambahTeks("\n");
 
+  // Ringkasan Eksekutif
   if (payload.ringkasan_eksekutif) {
-    baris.push("RINGKASAN EKSEKUTIF");
-    baris.push(payload.ringkasan_eksekutif);
-    baris.push("\n");
+    tambahTeks("RINGKASAN EKSEKUTIF\n", "HEADING_1");
+    tambahTeks(`${payload.ringkasan_eksekutif}\n\n`);
   }
 
+  // Agenda & Keputusan
   if (payload.agenda_dan_keputusan?.length) {
-    baris.push("AGENDA & KEPUTUSAN");
+    tambahTeks("AGENDA & KEPUTUSAN\n", "HEADING_1");
     payload.agenda_dan_keputusan.forEach((item, idx) => {
-      baris.push(`${idx + 1}. Agenda: ${item.agenda}`);
-      if (item.pembahasan) baris.push(`   Pembahasan : ${item.pembahasan}`);
-      baris.push(`   Keputusan  : ${item.keputusan}`);
+      tambahTeks(`${idx + 1}. Agenda: `, "BOLD");
+      tambahTeks(`${item.agenda}\n`);
+      if (item.pembahasan) {
+        tambahTeks("   Pembahasan: ", "BOLD");
+        tambahTeks(`${item.pembahasan}\n`);
+      }
+      tambahTeks("   Keputusan: ", "BOLD");
+      tambahTeks(`${item.keputusan}\n\n`);
     });
-    baris.push("\n");
   }
 
+  // Action Items / Tindak Lanjut
   if (payload.action_items?.length) {
-    baris.push("MATRIKS TINDAK LANJUT (ACTION ITEMS)");
+    tambahTeks("MATRIKS TINDAK LANJUT (ACTION ITEMS)\n", "HEADING_1");
     payload.action_items.forEach((task, idx) => {
-      const pic = task.pic ? ` [PIC: ${task.pic}]` : "";
-      const tenggat = task.tenggat_waktu ? ` (Tenggat: ${task.tenggat_waktu})` : "";
-      baris.push(`[ ] ${idx + 1}. ${task.tugas}${pic}${tenggat}`);
+      tambahTeks(`[ ] ${idx + 1}. `, "BOLD");
+      tambahTeks(task.tugas);
+      if (task.pic) {
+        tambahTeks(`  (PIC: ${task.pic})`, "ITALIC");
+      }
+      if (task.tenggat_waktu) {
+        tambahTeks(` — Tenggat: ${task.tenggat_waktu}`, "BOLD");
+      }
+      tambahTeks("\n");
     });
-    baris.push("\n");
+    tambahTeks("\n");
   }
 
-  baris.push("================================================================================");
-  baris.push("Disusun otomatis oleh ruma. - Your AI Meeting Companion");
-  baris.push("\n\n");
+  tambahTeks("Disusun otomatis oleh ruma. — Your AI Meeting Companion\n", "ITALIC");
 
-  const isiTeks = baris.join("\n");
+  // 3. Susun permintaan batchUpdate: Insert Teks duluan, lalu berikan Typography & Styling
+  const requests: Record<string, unknown>[] = [
+    {
+      insertText: {
+        location: { index: 1 },
+        text: buffer,
+      },
+    },
+  ];
 
-  // 3. Masukkan teks ke dalam Google Docs via batchUpdate (insertText pada index 1)
+  // Tambahkan formatting typography
+  for (const s of styles) {
+    if (s.type === "TITLE") {
+      requests.push({
+        updateParagraphStyle: {
+          range: { startIndex: s.start, endIndex: s.end },
+          paragraphStyle: {
+            namedStyleType: "TITLE",
+            alignment: "CENTER",
+            spaceBelow: { magnitude: 4, unit: "PT" },
+          },
+          fields: "namedStyleType,alignment,spaceBelow",
+        },
+      });
+      requests.push({
+        updateTextStyle: {
+          range: { startIndex: s.start, endIndex: s.end - 1 },
+          textStyle: {
+            bold: true,
+            foregroundColor: { color: { rgbColor: { red: 0.08, green: 0.24, blue: 0.21 } } }, // Forest green ruma.
+          },
+          fields: "bold,foregroundColor",
+        },
+      });
+    } else if (s.type === "SUBTITLE") {
+      requests.push({
+        updateParagraphStyle: {
+          range: { startIndex: s.start, endIndex: s.end },
+          paragraphStyle: {
+            namedStyleType: "SUBTITLE",
+            alignment: "CENTER",
+            spaceBelow: { magnitude: 16, unit: "PT" },
+          },
+          fields: "namedStyleType,alignment,spaceBelow",
+        },
+      });
+    } else if (s.type === "HEADING_1") {
+      requests.push({
+        updateParagraphStyle: {
+          range: { startIndex: s.start, endIndex: s.end },
+          paragraphStyle: {
+            namedStyleType: "HEADING_1",
+            spaceAbove: { magnitude: 12, unit: "PT" },
+            spaceBelow: { magnitude: 6, unit: "PT" },
+          },
+          fields: "namedStyleType,spaceAbove,spaceBelow",
+        },
+      });
+      requests.push({
+        updateTextStyle: {
+          range: { startIndex: s.start, endIndex: s.end - 1 },
+          textStyle: {
+            bold: true,
+            foregroundColor: { color: { rgbColor: { red: 0.08, green: 0.24, blue: 0.21 } } },
+          },
+          fields: "bold,foregroundColor",
+        },
+      });
+    } else if (s.type === "HEADING_2") {
+      requests.push({
+        updateParagraphStyle: {
+          range: { startIndex: s.start, endIndex: s.end },
+          paragraphStyle: {
+            namedStyleType: "HEADING_2",
+            spaceBelow: { magnitude: 4, unit: "PT" },
+          },
+          fields: "namedStyleType,spaceBelow",
+        },
+      });
+    } else if (s.type === "BOLD") {
+      requests.push({
+        updateTextStyle: {
+          range: { startIndex: s.start, endIndex: s.end },
+          textStyle: { bold: true },
+          fields: "bold",
+        },
+      });
+    } else if (s.type === "ITALIC") {
+      requests.push({
+        updateTextStyle: {
+          range: { startIndex: s.start, endIndex: s.end },
+          textStyle: { italic: true },
+          fields: "italic",
+        },
+      });
+    }
+  }
+
   const resUpdate = await fetch(`${DOCS_BASE}/${fileId}:batchUpdate`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      requests: [
-        {
-          insertText: {
-            location: { index: 1 },
-            text: isiTeks,
-          },
-        },
-      ],
-    }),
+    body: JSON.stringify({ requests }),
   });
 
   if (!resUpdate.ok) {
     const err = await resUpdate.text();
-    throw new Error(`Gagal mengisi konten Google Docs: ${err}`);
+    throw new Error(`Gagal memformat dokumen Google Docs: ${err}`);
   }
 
   const url = `https://docs.google.com/document/d/${fileId}/edit`;
