@@ -3,6 +3,7 @@ import type { TipeSesi } from "../db/schema.js";
 import { env } from "../env.js";
 import * as cloudflare from "./cloudflare.js";
 import * as gemini from "./gemini.js";
+import { ekstrakJson } from "./parser-json.js";
 import { GalatLayanan } from "./layanan.js";
 import { SYSTEM_RAPAT, SYSTEM_SUPERVISI } from "./prompts.js";
 
@@ -53,17 +54,7 @@ const skemaSupervisi = z.looseObject({
 
 export type HasilRapat = z.infer<typeof skemaRapat>;
 
-/** Model kadang membungkus JSON dengan ```json ... ``` atau kalimat pengantar; ambil objek terluar. */
-export function ekstrakJson(teksModel: string): unknown {
-  const awal = teksModel.indexOf("{");
-  const akhir = teksModel.lastIndexOf("}");
-  if (awal < 0 || akhir <= awal) throw new GalatLayanan("jawaban model tidak berisi objek JSON");
-  try {
-    return JSON.parse(teksModel.slice(awal, akhir + 1));
-  } catch (e) {
-    throw new GalatLayanan(`jawaban model bukan JSON valid: ${e instanceof Error ? e.message : e}`);
-  }
-}
+export { ekstrakJson };
 
 export type MasukanAnalisis = {
   tipe: TipeSesi;

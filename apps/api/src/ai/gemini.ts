@@ -20,7 +20,12 @@ export async function chat(messages: Pesan[]): Promise<string> {
         "content-type": "application/json",
         ...(env.GEMINI_API_KEY ? { authorization: `Bearer ${env.GEMINI_API_KEY}` } : {}),
       },
-      body: JSON.stringify({ model: env.GEMINI_MODEL, messages, temperature: 0.2 }),
+      body: JSON.stringify({
+        model: env.GEMINI_MODEL,
+        messages,
+        temperature: 0.2,
+        response_format: { type: "json_object" },
+      }),
     },
     10 * 60_000,
   );

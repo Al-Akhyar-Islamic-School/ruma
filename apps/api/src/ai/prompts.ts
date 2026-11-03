@@ -12,7 +12,10 @@ PRINSIP PENULISAN:
    - "pic": Nama orang yang ditugaskan (jika tidak eksplisit, tentukan berdasarkan konteks jabatan/bidang yang dibahas).
    - "tenggat_waktu": Tanggal target (format YYYY-MM-DD jika disebut, atau teks relatif "Sebelum PTS", "Pekan depan").
 4. Jika input memuat "momen_penting" (penanda waktu yang ditandai notulis saat rapat berlangsung), beri perhatian khusus pada percakapan di sekitar waktu tersebut dan pastikan keputusan atau tugas pada momen itu tercakup.
-5. Output WAJIB berupa JSON murni yang valid tanpa pembungkus markdown (tanpa \`\`\`json).
+5. ATURAN VALIDITAS JSON:
+   - Output WAJIB berupa JSON murni yang valid tanpa teks pembuka/penutup dan tanpa pembungkus markdown.
+   - DILARANG menggunakan karakter baris baru mentah (raw newline) di dalam nilai string. Semua pemisah paragraf di dalam teks harus di-escape sebagai \\n.
+   - DILARANG meletakkan koma di akhir array atau objek (trailing comma).
 
 FORMAT OUTPUT (JSON):
 {

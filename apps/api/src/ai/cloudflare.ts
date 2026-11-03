@@ -66,5 +66,11 @@ export async function transkripsi(berkas: string): Promise<HasilWhisper> {
 /** Cadangan saat gateway Gemini mati (ARCHITECTURE.md §1). Mengembalikan teks jawaban model. */
 export async function llm(messages: Pesan[]): Promise<string> {
   const r = await jalankanModel(env.CF_LLM_MODEL, { messages, max_tokens: 4096 }, 5 * 60_000);
-  return z.looseObject({ response: z.string() }).parse(r).response;
+  // Llama di Cloudflare Workers AI bisa mengembalikan { response: string } ATAU { response: object }
+  if (r && typeof r === "object" && "response" in r) {
+    const res = r.response;
+    if (typeof res === "string") return res;
+    if (typeof res === "object" && res !== null) return JSON.stringify(res);
+  }
+  return typeof r === "string" ? r : JSON.stringify(r);
 }
