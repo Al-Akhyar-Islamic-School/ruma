@@ -14,6 +14,55 @@ export type DataNotulen = {
   action_items?: { tugas: string; pic?: string; tenggat_waktu?: string | null; status?: string }[];
 };
 
+const NAMA_FOLDER_DEFAULT = "ruma. Notulen";
+
+/** Mencari atau membuat folder khusus ruma. Notulen di Google Drive pengguna */
+async function pastikanFolderRuma(token: string): Promise<string | null> {
+  try {
+    const q = `mimeType = 'application/vnd.google-apps.folder' and name = '${NAMA_FOLDER_DEFAULT}' and trashed = false`;
+    const resList = await fetch(`${DRIVE_BASE}?q=${encodeURIComponent(q)}&spaces=drive&fields=files(id,name)`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (resList.ok) {
+      const data = (await resList.json()) as { files: { id: string; name: string }[] };
+      if (data.files && data.files.length > 0) {
+        return data.files[0]!.id;
+      }
+    }
+
+    // Buat folder baru jika belum ada
+    const resCreate = await fetch(DRIVE_BASE, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name: NAMA_FOLDER_DEFAULT,
+        mimeType: "application/vnd.google-apps.folder",
+      }),
+    });
+    if (resCreate.ok) {
+      const folder = (await resCreate.json()) as { id: string };
+      return folder.id;
+    }
+  } catch {
+    // Jika gagal buat/cari folder, dokumen tetap aman berada di Root Drive pengguna
+  }
+  return null;
+}
+
+async function pindahkanKeFolder(token: string, fileId: string, folderId: string): Promise<void> {
+  try {
+    await fetch(`${DRIVE_BASE}/${fileId}?addParents=${folderId}&fields=id,parents`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  } catch {
+    // Non-blocking
+  }
+}
+
 export async function eksporKeGoogleDocs(
   userId: number,
   judulSesi: string,
@@ -48,6 +97,12 @@ export async function eksporKeGoogleDocs(
 
     const doc = (await resCreate.json()) as { documentId: string };
     fileId = doc.documentId;
+
+    // Pindahkan berkas baru ke folder "ruma. Notulen" di Google Drive pengguna
+    const folderId = await pastikanFolderRuma(token);
+    if (folderId) {
+      await pindahkanKeFolder(token, fileId, folderId);
+    }
   }
 
   // 2. Susun teks konten berformat resmi Al Akhyar
