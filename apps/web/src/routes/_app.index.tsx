@@ -32,11 +32,11 @@ function Beranda() {
     <div className="space-y-4 pb-44">
       <PemulihanBanner />
       <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
-        <TabsList className="grid h-12 w-full grid-cols-2 rounded-2xl p-1">
-          <TabsTrigger value="saya" className="h-10 rounded-xl text-sm font-semibold">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="saya">
             Rekaman saya
           </TabsTrigger>
-          <TabsTrigger value="dibagikan" className="h-10 rounded-xl text-sm font-semibold">
+          <TabsTrigger value="dibagikan">
             Dibagikan ke saya
             {(dibagikan.data?.length ?? 0) > 0 && (
               <span className="ml-1.5 rounded-full bg-primary px-1.5 text-xs text-primary-foreground">{dibagikan.data?.length}</span>
