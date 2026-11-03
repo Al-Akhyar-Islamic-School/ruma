@@ -1,4 +1,4 @@
-# Notula AI — Voice Notula & Supervisi Akademik
+# ruma. — Your AI Meeting Companion (by Al Akhyar)
 
 > **Aplikasi PWA Perekam Rapat & Observasi Kelas Cerdas Berbasis AI Hybrid (Cloudflare Whisper + Google Gemini)**  
 > Didesain khusus untuk ekosistem Yayasan & Sekolah Islam Al Akhyar.
@@ -15,7 +15,7 @@ Di lingkungan sekolah, ada dua beban administratif audio-ke-teks yang paling mem
    - Kepala sekolah / pengawas harus membagi fokus antara mengamati interaksi guru-murid dan mencatat poin rubrik observasi.
    - Penyusunan laporan supervisi dan catatan reflektif guru sering tertunda berhari-hari setelah supervisi selesai.
 
-**Notula AI** hadir sebagai *teacher & principal assistant* mirip konsep Plaud Note, tetapi berbentuk **PWA web/mobile mandiri**, menggunakan kombinasi AI **Cloudflare Whisper (gratis)** untuk transkripsi audio dan **Google Gemini (konteks 2M token)** untuk penalaran dokumen resmi sekolah.
+**ruma.** (*Listen · Understand · Summarize*) hadir sebagai *teacher & principal assistant* mirip konsep Plaud Note, tetapi berbentuk **PWA web/mobile mandiri**, menggunakan kombinasi AI **Cloudflare Whisper (gratis)** untuk transkripsi audio dan **Google Gemini (konteks 2M token)** untuk penalaran dokumen resmi sekolah.
 
 ---
 
@@ -23,7 +23,7 @@ Di lingkungan sekolah, ada dua beban administratif audio-ke-teks yang paling mem
 
 ```
                       ┌────────────────────────────────────────┐
-                      │         NOTULA AI (PWA APP)            │
+                      │            RUMA (PWA APP)              │
                       └──────────────────┬─────────────────────┘
                                          │
                      ┌───────────────────┴───────────────────┐

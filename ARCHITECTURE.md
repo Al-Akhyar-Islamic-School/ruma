@@ -1,4 +1,4 @@
-# Blueprint Arsitektur Teknis: Notula AI
+# Blueprint Arsitektur Teknis: ruma.
 
 **Versi:** 1.0.0  
 **Tanggal:** 3 November 2026  
@@ -17,7 +17,7 @@ flowchart TD
     end
 
     subgraph Gateway ["Backend & Orchestration API"]
-        UPL --> API[Notula API Service\nNode/Laravel/FastAPI]
+        UPL --> API[ruma API Service\nNode/Laravel/FastAPI]
         API --> S3[(Object Storage R2/S3\nArsip Audio Terenkripsi)]
         API --> QUEUE[Job Queue / Background Worker]
     end

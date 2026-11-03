@@ -1,6 +1,6 @@
-# Panduan Desain UI/UX Mobile-First: Notula AI
+# Panduan Desain UI/UX Mobile-First: ruma.
 
-**Aplikasi:** Notula AI — Al Akhyar Meeting Intelligence & Voice Notula
+**Aplikasi:** ruma. by Al Akhyar — Your AI Meeting Companion (Listen · Understand · Summarize)
 **Pendekatan:** Mobile-First Progressive Web App (PWA) & Responsive Tablet/Desktop  
 **Filosofi Desain:** *Tactile Minimalist, Distraction-Free, Thumb-Zone Friendly*  
 
@@ -63,7 +63,7 @@ Mengikuti identitas resmi **Sekolah Islam Al Akhyar** yang bersih, berwibawa, da
 
 ```
 ┌──────────────────────────────────────────┐
-│ [≡] Notula AI         [ 180/240m AI ⚡ ] │  <-- Top Bar & Indikator Kuota
+│ [≡] ruma.             [ 180/240m AI ⚡ ] │  <-- Top Bar & Indikator Kuota
 ├──────────────────────────────────────────┤
 │                                          │
 │  [ Semua ]  [ 👥 Rapat (8) ]  [ 🎓 Supervisi (3) ]  <-- Filter Chip
@@ -193,7 +193,7 @@ Untuk Modul Rapat, tab tugas menyediakan integrasi instan satu ketukan:
 ## 4. Keunggulan UX PWA (Offline & Performa)
 
 1. **Instalasi Tanpa Play Store (PWA Standalone)**:
-   - Guru membuka URL `notula.alakhyar.sch.id`, muncul prompt *"Tambahkan ke Layar Utama"*.
+   - Guru membuka URL `ruma.alakhyar.sch.id`, muncul prompt *"Tambahkan ke Layar Utama"*.
    - Berjalan mandiri tanpa bilah URL peramban (*display: standalone*), persis aplikasi Android asli.
 2. **Kapasitas Hemat Storage**:
    - Setelah notulen disetujui, terdapat tombol **"Hapus Berkas Audio Mentah (Hemat Memori)"** yang menyisakan dokumen teks saja (~15 KB), menghemat kuota Cloudflare R2 sekolah.

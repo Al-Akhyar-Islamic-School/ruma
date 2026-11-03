@@ -16,9 +16,9 @@ export default defineConfig({
       registerType: "autoUpdate",
       includeAssets: ["icon.svg"],
       manifest: {
-        name: "Notula AI",
-        short_name: "Notula",
-        description: "Notulensi rapat dan supervisi kelas dari rekaman suara, Sekolah Islam Al Akhyar.",
+        name: "ruma. by Al Akhyar",
+        short_name: "ruma.",
+        description: "Your AI Meeting Companion: notulensi rapat dan supervisi kelas dari rekaman suara, Sekolah Islam Al Akhyar.",
         lang: "id",
         start_url: "/",
         display: "standalone",

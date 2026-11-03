@@ -1,4 +1,4 @@
-# Rencana: aplikasi Android (Capacitor) untuk Notula AI
+# Rencana: aplikasi Android (Capacitor) untuk ruma.
 
 **Status:** rencana, belum dikerjakan. Dikerjakan setelah proses transkripsi terverifikasi berjalan baik.
 
@@ -13,7 +13,7 @@ Bukan tujuan: fitur baru, UI terpisah, atau menggantikan PWA. PWA tetap menjadi 
 
 ## 2. Acuan yang sudah ada
 
-- Proyek CBT (`erapor-cbt/apps/ujian`) memakai Capacitor 7, `appId sch.alakhyar.ujian`, skrip `android:apk` = `vite build && cap sync android && cd android && ./gradlew assembleDebug`, `MainActivity` yang mendaftarkan plugin native (`UjianNativePlugin`), dan APK debug disebar langsung. Notula mengikuti pola yang sama.
+- Proyek CBT (`erapor-cbt/apps/ujian`) memakai Capacitor 7, `appId sch.alakhyar.ujian`, skrip `android:apk` = `vite build && cap sync android && cd android && ./gradlew assembleDebug`, `MainActivity` yang mendaftarkan plugin native (`UjianNativePlugin`), dan APK debug disebar langsung. ruma mengikuti pola yang sama.
 - Mesin pengembangan ini: Android SDK ada (`platforms` 33-35, `build-tools` 34, ada `system-images/android-34`), **JDK belum terpasang** (Capacitor 7 butuh JDK 21).
 
 ## 3. Keputusan yang perlu dikonfirmasi
@@ -22,8 +22,8 @@ Bukan tujuan: fitur baru, UI terpisah, atau menggantikan PWA. PWA tetap menjadi 
 |---|---|---|---|
 | 1 | Distribusi | APK langsung (sideload), `assembleDebug`/rilis bertanda tangan sendiri | Play Store menambah: akun developer, tanda tangan App Bundle, kebijakan izin mikrofon/foreground service, kebijakan data murid |
 | 2 | Perekaman layar mati di versi pertama | Ya (alasan utama APK) | Tanpa ini APK nyaris tak beda dari PWA |
-| 3 | Domain produksi | `notula.<domain>` untuk web, `api.notula.<domain>` untuk API (sama-situs) | Menentukan `server.hostname` dan cookie sesi (lihat 4.2) |
-| 4 | `appId` | `sch.alakhyar.notula` | Juga menjadi skema deep link |
+| 3 | Domain produksi | `ruma.<domain>` untuk web, `api.ruma.<domain>` untuk API (sama-situs) | Menentukan `server.hostname` dan cookie sesi (lihat 4.2) |
+| 4 | `appId` | `sch.alakhyar.ruma` | Juga menjadi skema deep link |
 | 5 | Pembaruan app | Manual (unduh APK baru) di fase 1 | Pembaruan dari dalam app (seperti CBT `pasangApk`) bisa menyusul |
 
 ## 4. Rancangan
@@ -39,7 +39,7 @@ App          : buat verifier acak; tantangan = base64url(sha256(verifier)); simp
 App          : Browser.open(API/auth/google?app=1&c=<tantangan>)
 API          : simpan tantangan di cookie transaksi; arahkan ke Google (alur yang sudah ada)
 API callback : verifikasi ID token (hd, nonce, dst. sudah ada); buat KODE sekali pakai (hash di DB, TTL 2 menit, terikat tantangan);
-               tampilkan halaman yang membuka  sch.alakhyar.notula://masuk?kode=...  (pengalihan otomatis + tombol manual)
+               tampilkan halaman yang membuka  sch.alakhyar.ruma://masuk?kode=...  (pengalihan otomatis + tombol manual)
 App          : @capacitor/app `appUrlOpen` -> POST /auth/aplikasi/tukar {kode, verifier}
 API          : kode ada, belum kedaluwarsa, sha256(verifier) == tantangan -> hapus kode -> buat sesi (cookie) -> {ok:true}
 ```
@@ -51,29 +51,29 @@ API          : kode ada, belum kedaluwarsa, sha256(verifier) == tantangan -> hap
 
 ### 4.2 Cookie sesi di WebView
 
-Origin WebView Capacitor default `https://localhost` berbeda situs dari API, sehingga cookie `SameSite=Lax` tidak terkirim. Solusi tanpa mengubah model sesi: set `server.hostname` Capacitor ke **host yang sama dengan `APP_URL`** (mis. `notula.alakhyar.sch.id`, `androidScheme: https`).
+Origin WebView Capacitor default `https://localhost` berbeda situs dari API, sehingga cookie `SameSite=Lax` tidak terkirim. Solusi tanpa mengubah model sesi: set `server.hostname` Capacitor ke **host yang sama dengan `APP_URL`** (mis. `ruma.alakhyar.sch.id`, `androidScheme: https`).
 
 - `Origin` yang dikirim WebView = `APP_URL`, jadi CORS dan pemeriksaan origin API tetap lolos tanpa perubahan.
-- API di `api.notula.alakhyar.sch.id` sama-situs dengan itu, jadi cookie `Lax` terkirim, termasuk untuk `<audio src>`.
+- API di `api.ruma.alakhyar.sch.id` sama-situs dengan itu, jadi cookie `Lax` terkirim, termasuk untuk `<audio src>`.
 - Akibatnya WebView menyajikan aset lokal untuk host itu (app tidak membuka PWA daring di host yang sama; wajar).
 - Syarat: `APP_URL` berskema `https` di produksi. Untuk uji dengan API lokal berskema `http`, pakai `androidScheme: http` pada build uji.
 
 ### 4.3 Plugin native perekam (Java, mengikuti `UjianNativePlugin`)
 
-`NotulaRecorderPlugin` (nama plugin `NotulaRecorder`) + `NotulaRecorderService`:
+`RumaRecorderPlugin` (nama plugin `RumaRecorder`) + `RumaRecorderService`:
 
-- `mulai({judul})`: menjalankan **foreground service** bertipe `microphone` dengan notifikasi "Notula sedang merekam: {judul}", menahan `PARTIAL_WAKE_LOCK` (agar CPU tetap hidup saat layar mati; ada batas waktu pengaman), dan opsional `FLAG_KEEP_SCREEN_ON`.
+- `mulai({judul})`: menjalankan **foreground service** bertipe `microphone` dengan notifikasi "ruma sedang merekam: {judul}", menahan `PARTIAL_WAKE_LOCK` (agar CPU tetap hidup saat layar mati; ada batas waktu pengaman), dan opsional `FLAG_KEEP_SCREEN_ON`.
 - `berhenti()`: menghentikan service, melepas wake lock.
-- **Urutan penting (Android 14):** service bertipe mikrofon hanya boleh dimulai bila izin `RECORD_AUDIO` sudah diberikan. Jadi JS memanggil `getUserMedia` lebih dulu (memicu dialog izin), baru `NotulaRecorder.mulai()`. Plugin memeriksa izin dan menolak dengan galat jelas, bukan crash.
+- **Urutan penting (Android 14):** service bertipe mikrofon hanya boleh dimulai bila izin `RECORD_AUDIO` sudah diberikan. Jadi JS memanggil `getUserMedia` lebih dulu (memicu dialog izin), baru `RumaRecorder.mulai()`. Plugin memeriksa izin dan menolak dengan galat jelas, bukan crash.
 - Izin manifest: `RECORD_AUDIO`, `MODIFY_AUDIO_SETTINGS`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_MICROPHONE`, `POST_NOTIFICATIONS` (Android 13+; bila ditolak, service tetap berjalan, hanya notifikasi tak tampil), `WAKE_LOCK`.
 - Sisi web: pembungkus `features/rekam/native.ts` (`registerPlugin`, tanpa efek di web) dipanggil dari `use-perekam.ts` saat mulai dan selesai/batal.
 - Hal yang harus diperiksa di kode sumber `@capacitor/android`: apakah `BridgeActivity` memanggil `WebView.onPause()` saat app ke latar belakang. Bila ya, `MainActivity` perlu menimpanya (mis. `resumeTimers()`) agar `MediaRecorder` dan timer JS terus berjalan.
 
 ### 4.4 Cangkang aplikasi
 
-- `apps/web/capacitor.config.ts`: `appId`, `appName: Notula AI`, `webDir: dist`, `server.hostname/androidScheme` dari env, `allowMixedContent: false`.
+- `apps/web/capacitor.config.ts`: `appId`, `appName: ruma.`, `webDir: dist`, `server.hostname/androidScheme` dari env, `allowMixedContent: false`.
 - Folder `apps/web/android/` (dihasilkan `cap add android`, di-commit seperti CBT; `build/` dan `local.properties` diabaikan).
-- `AndroidManifest`: izin di atas; `intent-filter` deep link `sch.alakhyar.notula://masuk` (BROWSABLE); `allowBackup=false` (data rekaman kelas); service dengan `foregroundServiceType="microphone"`.
+- `AndroidManifest`: izin di atas; `intent-filter` deep link `sch.alakhyar.ruma://masuk` (BROWSABLE); `allowBackup=false` (data rekaman kelas); service dengan `foregroundServiceType="microphone"`.
 - Ikon launcher dari `public/icon.svg` (semua kepadatan + ikon adaptif, latar `#0284c7`).
 - Build native: `VITE_NATIVE=1` mematikan service worker PWA (aset sudah lokal; SW hanya menambah risiko cache usang). `VITE_API_URL` produksi wajib diisi saat build (tidak boleh default ke localhost).
 - Skrip: `android:sync` (`VITE_NATIVE=1 vite build && cap sync android`) dan `android:apk` (`... && ./gradlew assembleDebug`).

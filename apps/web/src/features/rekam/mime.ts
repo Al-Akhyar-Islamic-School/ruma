@@ -14,15 +14,15 @@ export function cekDukunganRekam(): DukunganRekam {
   if (!window.isSecureContext) {
     return {
       ok: false,
-      pesan: "Izin mikrofon hanya diberikan lewat koneksi aman. Buka Notula AI dari alamat yang diawali https://.",
+      pesan: "Izin mikrofon hanya diberikan lewat koneksi aman. Buka ruma dari alamat yang diawali https://.",
     };
   }
   if (!navigator.mediaDevices?.getUserMedia) {
-    return { ok: false, pesan: "Peramban ini tidak bisa mengakses mikrofon. Buka Notula AI lewat Chrome, Safari, atau Firefox versi terbaru." };
+    return { ok: false, pesan: "Peramban ini tidak bisa mengakses mikrofon. Buka ruma lewat Chrome, Safari, atau Firefox versi terbaru." };
   }
   const mime = pilihMimeRekam();
   if (!mime) {
-    return { ok: false, pesan: "Peramban ini tidak mendukung perekaman audio. Buka Notula AI lewat Chrome, Safari, atau Firefox versi terbaru." };
+    return { ok: false, pesan: "Peramban ini tidak mendukung perekaman audio. Buka ruma lewat Chrome, Safari, atau Firefox versi terbaru." };
   }
   return { ok: true, mime };
 }

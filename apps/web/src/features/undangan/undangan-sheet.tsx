@@ -365,7 +365,7 @@ export function UndanganSheet({
                     <AlertTitle>Terbuka untuk semua yang login</AlertTitle>
                     <AlertDescription>
                       <p>
-                        Seluruh akun Al Akhyar yang masuk ke Notula AI akan bisa mendengarkan dan membaca rekaman ini. Pilih ini hanya bila isinya memang
+                        Seluruh akun Al Akhyar yang masuk ke ruma akan bisa mendengarkan dan membaca rekaman ini. Pilih ini hanya bila isinya memang
                         boleh diketahui seluruh sekolah.
                       </p>
                       {organisasiDiundang && <p className="mt-2 font-medium">Rekaman ini sudah terbuka untuk seluruh Al Akhyar.</p>}

@@ -1,6 +1,6 @@
-# Product Requirements Document (PRD): Notula AI
+# Product Requirements Document (PRD): ruma.
 
-**Aplikasi:** Notula AI — Al Akhyar Meeting Intelligence & Voice Notula
+**Aplikasi:** ruma. by Al Akhyar — Your AI Meeting Companion (Listen · Understand · Summarize)
 **Fokus:** Modul Notulensi Rapat & Modul Supervisi Akademik / Observasi Kelas  
 **Target Platform:** Progressive Web App (PWA) Mobile/Tablet/Desktop  
 **Status:** Engineering Ready  
