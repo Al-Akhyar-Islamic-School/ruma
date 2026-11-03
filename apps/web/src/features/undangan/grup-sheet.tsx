@@ -42,7 +42,7 @@ function GrupForm({
       onSelesai();
     },
     onError: (e) => toast.error(pesanGalat(e)),
-    // Kunci ["grup"] juga mencakup ["grup", id] (pencocokan awalan).
+    // Awalan ["grup"] juga mencakup ["grup", id] dan ["grup", "keanggotaan"] (grup orang lain ikut berubah).
     onSettled: () => qc.invalidateQueries({ queryKey: ["grup"] }),
   });
 

@@ -67,6 +67,7 @@ export function IsiSesi({ sesi }: { sesi: DetailSesi }) {
         tipeSesi={sesi.tipeSesi}
         adalahPerekam={sesi.adalahPerekam}
         galat={sesi.galat}
+        pemrosesan={sesi.pemrosesan}
       />
 
       {draf && (

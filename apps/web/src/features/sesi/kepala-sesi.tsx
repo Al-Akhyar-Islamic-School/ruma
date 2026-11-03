@@ -1,8 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowLeftIcon, UserPlusIcon } from "lucide-react";
-import { KATEGORI_LABEL } from "@/components/app/sesi-card";
 import { Button } from "@/components/ui/button";
 import { formatDurasi, formatWaktu } from "@/lib/format";
+import { labelKategori, useKategori } from "@/lib/kategori";
 import { SetujuiDokumen } from "./setujui-dokumen";
 import { StatusBadge } from "./status-badge";
 import type { DetailSesi } from "./queries";
@@ -17,11 +17,12 @@ export function KepalaSesi({
   bisaSetujui: boolean;
   onUndang: () => void;
 }) {
+  const daftarKategori = useKategori();
   const supervisi = sesi.tipeSesi === "supervisi_kelas";
   const sub = supervisi
     ? [sesi.metadata.kelas, sesi.metadata.mapel].filter(Boolean).join(" · ")
     : sesi.metadata.kategori
-      ? KATEGORI_LABEL[sesi.metadata.kategori]
+      ? labelKategori(daftarKategori, sesi.metadata.kategori)
       : "";
   const meta: string[] = [formatWaktu(sesi.createdAt)];
   if (sesi.durasiDetik > 0) meta.push(formatDurasi(sesi.durasiDetik));

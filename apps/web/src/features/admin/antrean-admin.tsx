@@ -2,6 +2,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ClockIcon, GraduationCapIcon, UsersIcon } from "lucide-react";
 import { toast } from "sonner";
 import { EmptyState, ErrorNotice, ListSkeleton } from "@/components/app/feedback";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -23,6 +25,13 @@ export function AntreanAdmin() {
     refetchInterval: REFRESH_MS,
   });
 
+  const worker = useQuery({
+    queryKey: ["admin", "worker"],
+    queryFn: async () => ok(await api.admin.worker.$get()),
+    refetchInterval: REFRESH_MS,
+  });
+  const adaMenunggu = q.data?.some((s) => s.status === "mentranskrip" || s.status === "menganalisis") ?? false;
+
   const ulangi = useMutation({
     mutationFn: async (uuid: string) => ok(await api.admin.sesi[":uuid"].ulangi.$post({ param: { uuid } })),
     onSuccess: (d) => {
@@ -41,6 +50,14 @@ export function AntreanAdmin() {
         Sesi yang sedang diproses atau gagal. Admin hanya melihat metadata (judul, perekam, status), bukan isi rekaman atau transkrip. Daftar
         diperbarui otomatis tiap {REFRESH_MS / 1000} detik.
       </p>
+
+      <StatusLayanan
+        isPending={worker.isPending}
+        isError={worker.isError}
+        aktif={worker.data?.aktif ?? false}
+        detakTerakhir={worker.data?.detakTerakhir ?? null}
+        adaMenunggu={adaMenunggu}
+      />
 
       {q.isPending ? (
         <ListSkeleton />
@@ -80,6 +97,11 @@ export function AntreanAdmin() {
                           </span>
                         )}
                       </p>
+                      {s.status === "mentranskrip" && s.progresSelesai !== null && s.progresTotal !== null && (
+                        <p className="text-xs text-muted-foreground">
+                          Bagian <span className="font-mono tabular-nums">{s.progresSelesai}/{s.progresTotal}</span>
+                        </p>
+                      )}
                     </div>
                   </div>
                   {s.galat && <p className="break-words rounded-xl bg-destructive/10 px-3 py-2 text-sm text-destructive">{s.galat}</p>}
@@ -93,6 +115,53 @@ export function AntreanAdmin() {
             );
           })}
         </ul>
+      )}
+    </div>
+  );
+}
+
+function StatusLayanan({
+  isPending,
+  isError,
+  aktif,
+  detakTerakhir,
+  adaMenunggu,
+}: {
+  isPending: boolean;
+  isError: boolean;
+  aktif: boolean;
+  detakTerakhir: string | null;
+  adaMenunggu: boolean;
+}) {
+  if (isPending) return <Skeleton className="h-16 w-full rounded-2xl" />;
+  if (isError) {
+    return <p className="rounded-2xl border px-4 py-3 text-sm text-muted-foreground">Status layanan pemrosesan tidak bisa dimuat. Akan dicoba lagi otomatis.</p>;
+  }
+  return (
+    <div className="space-y-3" aria-live="polite">
+      <Card className="flex-row items-center justify-between gap-3 rounded-2xl px-4 py-3">
+        <div className="min-w-0">
+          <p className="font-semibold">Layanan pemrosesan</p>
+          <p className="text-sm text-muted-foreground">
+            {detakTerakhir ? `Terakhir terdeteksi ${formatWaktu(detakTerakhir)}` : "Belum pernah terdeteksi"}
+          </p>
+        </div>
+        {aktif ? (
+          <Badge className="shrink-0 bg-success text-success-foreground">Aktif</Badge>
+        ) : (
+          <Badge variant="secondary" className="shrink-0">
+            Tidak terdeteksi
+          </Badge>
+        )}
+      </Card>
+      {!aktif && adaMenunggu && (
+        <Alert variant="destructive" role="alert">
+          <AlertTitle>Layanan pemrosesan tidak aktif</AlertTitle>
+          <AlertDescription>
+            Sesi yang menunggu tidak akan diproses. Jalankan <code className="font-mono">pnpm --filter @kalam/api worker</code> di server, atau
+            pastikan WORKER_INLINE tidak dimatikan dan API berjalan.
+          </AlertDescription>
+        </Alert>
       )}
     </div>
   );

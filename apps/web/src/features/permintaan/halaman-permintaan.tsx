@@ -12,7 +12,7 @@ import { FormAjukan } from "./form-ajukan";
 import { type DataPermintaan, RincianPermintaan, tampilanStatus } from "./rincian";
 
 const TIDAK_DIDUKUNG =
-  "Perangkat atau peramban ini tidak mendukung perekaman audio. Buka Kalam AI lewat Chrome, Safari, atau Firefox versi terbaru.";
+  "Perangkat atau peramban ini tidak mendukung perekaman audio. Buka Notula AI lewat Chrome, Safari, atau Firefox versi terbaru.";
 
 export function HalamanPermintaan() {
   const me = useMe();

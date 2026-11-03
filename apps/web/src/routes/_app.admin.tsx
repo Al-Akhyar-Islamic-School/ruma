@@ -16,7 +16,7 @@ const TAB_UMUM = [
   { to: "/admin/gtk", label: "GTK" },
 ] as const;
 
-type TujuanTab = (typeof TAB_UMUM)[number]["to"] | "/admin/sesi" | "/admin/pengaturan";
+type TujuanTab = (typeof TAB_UMUM)[number]["to"] | "/admin/sesi" | "/admin/pengaturan" | "/admin/kategori";
 
 function AdminLayout() {
   const me = useMe();
@@ -32,6 +32,7 @@ function AdminLayout() {
         ))}
         {me.role === "superadmin" && <TabLink to="/admin/sesi">Semua sesi</TabLink>}
         {me.role === "superadmin" && <TabLink to="/admin/pengaturan">Pengaturan</TabLink>}
+        {me.role === "superadmin" && <TabLink to="/admin/kategori">Kategori rapat</TabLink>}
       </nav>
       <Outlet />
     </div>

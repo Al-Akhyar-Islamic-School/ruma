@@ -1,4 +1,4 @@
-# Blueprint Arsitektur Teknis: Kalam AI
+# Blueprint Arsitektur Teknis: Notula AI
 
 **Versi:** 1.0.0  
 **Tanggal:** 3 November 2026  
@@ -17,7 +17,7 @@ flowchart TD
     end
 
     subgraph Gateway ["Backend & Orchestration API"]
-        UPL --> API[Kalam API Service\nNode/Laravel/FastAPI]
+        UPL --> API[Notula API Service\nNode/Laravel/FastAPI]
         API --> S3[(Object Storage R2/S3\nArsip Audio Terenkripsi)]
         API --> QUEUE[Job Queue / Background Worker]
     end

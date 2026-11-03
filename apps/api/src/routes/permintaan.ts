@@ -6,6 +6,7 @@ import { requireAuth, type AuthEnv } from "../auth/session.js";
 import { db } from "../db/index.js";
 import { permintaanSesi, sesi } from "../db/schema.js";
 import { bisaBuatSesiLangsung } from "../permissions.js";
+import { kategoriBolehDipilih } from "../kategori.js";
 import { audioMime, requireSupervisiMeta, sesiSpecShape } from "../sesi-spec.js";
 import { filterModulPermintaan, modulSupervisiAktif } from "../pengaturan.js";
 
@@ -39,6 +40,9 @@ export const permintaanRoutes = new Hono<AuthEnv>()
     if (bisaBuatSesiLangsung(user)) return c.json({ error: "tidak_perlu_permintaan" }, 409);
     if (c.req.valid("json").tipe_sesi === "supervisi_kelas" && !(await modulSupervisiAktif())) {
       return c.json({ error: "modul_nonaktif", modul: "supervisi" }, 403);
+    }
+    if (!(await kategoriBolehDipilih(c.req.valid("json").metadata.kategori))) {
+      return c.json({ error: "kategori_tidak_valid" }, 422);
     }
 
     const [{ menunggu = 0 } = {}] = await db

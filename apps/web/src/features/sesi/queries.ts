@@ -12,6 +12,8 @@ const ambilDokumen = async (uuid: string) => ok(await api.sesi[":uuid"].dokumen.
 
 /** Bentuk respons sukses (200) dari rute server; diturunkan otomatis dari tipe Hono. */
 export type DetailSesi = InferResponseType<(typeof api.sesi)[":uuid"]["$get"], 200>;
+/** Keadaan worker/percobaan/progres selama sesi diproses (bagian dari respons detail sesi). */
+export type PemrosesanSesi = DetailSesi["pemrosesan"];
 export type DataTranskrip = InferResponseType<(typeof api.sesi)[":uuid"]["transkrip"]["$get"], 200>;
 export type DataDokumen = InferResponseType<(typeof api.sesi)[":uuid"]["dokumen"]["$get"], 200>;
 

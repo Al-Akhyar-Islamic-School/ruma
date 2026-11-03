@@ -4,7 +4,7 @@ import { LoaderCircleIcon, MicIcon, MicOffIcon } from "lucide-react";
 import { type FormEvent, useMemo, useState } from "react";
 import { EmptyState } from "@/components/app/feedback";
 import { Segmented } from "@/components/app/segmented";
-import { KATEGORI_LABEL } from "@/components/app/sesi-card";
+import { kategoriAktif, useKategori } from "@/lib/kategori";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,7 +17,6 @@ import { simpanSesiLokal } from "./db";
 import { cekDukunganRekam } from "./mime";
 
 type Mode = "rapat" | "supervisi_kelas";
-type Kategori = keyof typeof KATEGORI_LABEL;
 
 const TANPA_KATEGORI = "tanpa";
 const JUDUL_MAKS = 255;
@@ -48,7 +47,8 @@ function FormSetup({ userId, supervisiAktif }: { userId: number; supervisiAktif:
 
   const [modeDipilih, setModeDipilih] = useState<Mode>("rapat");
   const [judulRapat, setJudulRapat] = useState("");
-  const [kategori, setKategori] = useState<Kategori | typeof TANPA_KATEGORI>(TANPA_KATEGORI);
+  const [kategori, setKategori] = useState<string>(TANPA_KATEGORI);
+  const daftarKategori = kategoriAktif(useKategori());
   const [guru, setGuru] = useState<OrangGtk | null>(null);
   const [kelas, setKelas] = useState("");
   const [mapel, setMapel] = useState("");
@@ -188,15 +188,15 @@ function FormSetup({ userId, supervisiAktif }: { userId: number; supervisiAktif:
           </div>
           <div className="space-y-2">
             <Label htmlFor="rekam-kategori">Kategori rapat (opsional)</Label>
-            <Select value={kategori} onValueChange={(v) => setKategori(v as Kategori | typeof TANPA_KATEGORI)}>
+            <Select value={kategori} onValueChange={setKategori}>
               <SelectTrigger id="rekam-kategori" className="w-full data-[size=default]:h-12 rounded-xl">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={TANPA_KATEGORI}>Tanpa kategori</SelectItem>
-                {(Object.keys(KATEGORI_LABEL) as Kategori[]).map((k) => (
-                  <SelectItem key={k} value={k}>
-                    {KATEGORI_LABEL[k]}
+                {daftarKategori.map((k) => (
+                  <SelectItem key={k.kode} value={k.kode}>
+                    {k.nama}
                   </SelectItem>
                 ))}
               </SelectContent>

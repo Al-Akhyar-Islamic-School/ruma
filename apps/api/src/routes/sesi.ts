@@ -7,9 +7,10 @@ import { requireAuth, type AuthEnv } from "../auth/session.js";
 import { diundang, findOwn, findReadable } from "../akses.js";
 import { db } from "../db/index.js";
 import { audioChunks, sesi, users } from "../db/schema.js";
+import { kategoriBolehDipilih } from "../kategori.js";
 import { bisaBuatSesiLangsung } from "../permissions.js";
 import { audioMime, requireSupervisiMeta, sesiSpecShape } from "../sesi-spec.js";
-import { filterModul, modulSupervisiAktif } from "../pengaturan.js";
+import { filterModul, modulSupervisiAktif, workerAktif } from "../pengaturan.js";
 import { audioStorage, chunkKey } from "../storage.js";
 import { hasilRoutes } from "./hasil.js";
 import { undanganRoutes } from "./undangan.js";
@@ -88,6 +89,9 @@ export const sesiRoutes = new Hono<AuthEnv>()
     if (b.tipe_sesi === "supervisi_kelas" && !(await modulSupervisiAktif())) {
       return c.json({ error: "modul_nonaktif", modul: "supervisi" }, 403);
     }
+    if (!(await kategoriBolehDipilih(b.metadata.kategori))) {
+      return c.json({ error: "kategori_tidak_valid" }, 422);
+    }
     const uuid = crypto.randomUUID();
     await db.insert(sesi).values({
       uuid,
@@ -109,6 +113,7 @@ export const sesiRoutes = new Hono<AuthEnv>()
       .where(eq(audioChunks.sesiId, s.id))
       .orderBy(asc(audioChunks.seq));
     const pemilik = s.userId === c.var.user.id;
+    const diproses = s.status === "mentranskrip" || s.status === "menganalisis";
     return c.json({
       uuid: s.uuid,
       tipeSesi: s.tipeSesi,
@@ -121,6 +126,16 @@ export const sesiRoutes = new Hono<AuthEnv>()
       audioTersedia: s.audioPath !== null,
       // Detail galat pemrosesan hanya untuk perekam; yang diundang tidak perlu melihatnya.
       galat: pemilik ? s.galat : null,
+      // Keadaan pemrosesan supaya UI jujur: progres, percobaan ulang, dan apakah ada worker yang menjaga antrean.
+      pemrosesan: {
+        workerAktif: diproses ? await workerAktif() : null,
+        percobaan: s.percobaan,
+        cobaLagiSetelah: s.cobaLagiSetelah,
+        progres:
+          s.progresTotal !== null && s.progresSelesai !== null
+            ? { selesai: s.progresSelesai, total: s.progresTotal }
+            : null,
+      },
       createdAt: s.createdAt,
       chunks: chunks.map((r) => r.seq),
     });

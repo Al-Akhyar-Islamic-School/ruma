@@ -42,7 +42,7 @@ export function Shell() {
             <MenuIcon />
           </Button>
           <Link to="/" className="text-lg font-extrabold tracking-tight">
-            Kalam AI
+            Notula AI
           </Link>
           <button
             type="button"

@@ -3,13 +3,7 @@ import { ClockIcon, GraduationCapIcon, UsersIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { formatDurasi, formatWaktu, STATUS_SESI, type StatusSesi } from "@/lib/format";
-
-export const KATEGORI_LABEL = {
-  pleno: "Rapat pleno",
-  kurikulum: "Rapat kurikulum",
-  komite: "Rapat komite",
-  pimpinan: "Rapat pimpinan",
-} as const;
+import { labelKategori, useKategori } from "@/lib/kategori";
 
 export type SesiRingkas = {
   uuid: string;
@@ -18,7 +12,7 @@ export type SesiRingkas = {
   status: StatusSesi;
   durasiDetik: number;
   createdAt: string;
-  metadata: { kategori?: keyof typeof KATEGORI_LABEL; kelas?: string; mapel?: string };
+  metadata: { kategori?: string; kelas?: string; mapel?: string };
   /** Ada pada daftar "Dibagikan". */
   perekam?: { name: string };
 };
@@ -27,12 +21,13 @@ const TONE = { amber: "warning", sky: "secondary", emerald: "success", rose: "de
 
 /** Kartu sesi di beranda (DESIGN.md Layar 1). */
 export function SesiCard({ s }: { s: SesiRingkas }) {
+  const kategori = useKategori();
   const supervisi = s.tipeSesi === "supervisi_kelas";
   const Ikon = supervisi ? GraduationCapIcon : UsersIcon;
   const sub = supervisi
     ? [s.metadata.kelas, s.metadata.mapel].filter(Boolean).join(" · ")
     : s.metadata.kategori
-      ? KATEGORI_LABEL[s.metadata.kategori]
+      ? labelKategori(kategori, s.metadata.kategori)
       : "";
   const status = STATUS_SESI[s.status];
   return (

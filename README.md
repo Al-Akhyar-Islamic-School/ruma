@@ -1,4 +1,4 @@
-# Kalam AI (القلم) — Voice Notula & Supervisi Akademik
+# Notula AI — Voice Notula & Supervisi Akademik
 
 > **Aplikasi PWA Perekam Rapat & Observasi Kelas Cerdas Berbasis AI Hybrid (Cloudflare Whisper + Google Gemini)**  
 > Didesain khusus untuk ekosistem Yayasan & Sekolah Islam Al Akhyar.
@@ -15,7 +15,7 @@ Di lingkungan sekolah, ada dua beban administratif audio-ke-teks yang paling mem
    - Kepala sekolah / pengawas harus membagi fokus antara mengamati interaksi guru-murid dan mencatat poin rubrik observasi.
    - Penyusunan laporan supervisi dan catatan reflektif guru sering tertunda berhari-hari setelah supervisi selesai.
 
-**Kalam AI** hadir sebagai *teacher & principal assistant* mirip konsep Plaud Note, tetapi berbentuk **PWA web/mobile mandiri**, menggunakan kombinasi AI **Cloudflare Whisper (gratis)** untuk transkripsi audio dan **Google Gemini (konteks 2M token)** untuk penalaran dokumen resmi sekolah.
+**Notula AI** hadir sebagai *teacher & principal assistant* mirip konsep Plaud Note, tetapi berbentuk **PWA web/mobile mandiri**, menggunakan kombinasi AI **Cloudflare Whisper (gratis)** untuk transkripsi audio dan **Google Gemini (konteks 2M token)** untuk penalaran dokumen resmi sekolah.
 
 ---
 
@@ -23,7 +23,7 @@ Di lingkungan sekolah, ada dua beban administratif audio-ke-teks yang paling mem
 
 ```
                       ┌────────────────────────────────────────┐
-                      │          KALAM AI (PWA APP)            │
+                      │         NOTULA AI (PWA APP)            │
                       └──────────────────┬─────────────────────┘
                                          │
                      ┌───────────────────┴───────────────────┐
@@ -117,7 +117,7 @@ pnpm dev
 - Batas durasi ditegakkan di `finish` (durasi yang dilaporkan klien) dan di unggahan chunk (jumlah chunk maksimum = ceil(durasi/30 dtk) + 2), jadi tidak bisa dilewati dengan memalsukan durasi.
 - Admin biasa sengaja **tidak** bisa membaca isi sesi orang lain kecuali diundang (rekaman kelas memuat suara murid, UU PDP). Superadmin: `GET /sesi/:uuid` dan `GET /admin/sesi?user_id=`. Superadmin tidak bisa mengunggah/menutup/mengundang di sesi orang lain.
 - Semua `timestamp` disimpan UTC (zona sesi koneksi dipaksa `+00:00`), apa pun zona server MySQL.
-- Endpoint: `GET /auth/google`, `GET /auth/google/callback`, `POST /auth/logout`, `GET /auth/me`, `GET /health`.
+- Endpoint: `GET /auth/google`, `GET /auth/google/callback`, `POST /auth/logout`, `GET /auth/me`, `GET /health` (200 bila skema database mutakhir; **503** dengan `migrasiTertinggal` bila ada migrasi yang belum dijalankan atau DB tak terjangkau; cocok untuk health check deploy).
 - Sesi rekaman (semua butuh login; mutasi hanya oleh perekam, baca oleh perekam, yang diundang, atau superadmin):
   - `POST /sesi` buat sesi langsung (hanya peran/izin di atas, selain itu 403 `perlu_persetujuan`). `supervisi_kelas` wajib `guruEmail` (dipilih dari daftar GTK; belum tentu pernah login), `kelas`, `mapel`.
   - `PUT /sesi/:uuid/chunks/:seq` unggah potongan audio (body biner, maks 2 MB, idempoten: unggah ulang `seq` yang sama menimpa).
@@ -138,8 +138,10 @@ Yang bisa membaca/mendengar sebuah sesi: **perekamnya**, **orang yang diundang**
 | `organisasi` | tanpa isi | semua yang berhasil login (seluruh Al Akhyar) |
 
 - Grup undangan milik pribadi dan dipakai berkali-kali: `GET/POST /grup`, `GET/PUT/DELETE /grup/:id` (anggota berupa email, maks 500; detail grup menampilkan nama resmi dari SIM-GTK).
+- Anggota grup (bukan pemilik): `GET /grup/keanggotaan` (grup orang lain yang menyertakan saya: nama, pemilik, jumlah anggota; **tanpa** daftar anggota lain), `DELETE /grup/keanggotaan/:id` (keluar dari grup; akses yang diberikan lewat grup itu ikut hilang). Grup yang diikuti boleh dipakai untuk mengundang ke rekaman sendiri (`POST /sesi/:uuid/undangan` `tipe: "grup"`).
 - `GET /sesi/dibagikan` = sesi orang lain yang mengundang saya.
-- Rapat `kategori: "pimpinan"` hanya boleh diundang per `orang` atau `grup` (ARCHITECTURE.md §5): `unit` dan `organisasi` ditolak 403.
+- Rapat berkategori **tertutup** (`terbatas`, bawaan: Rapat pimpinan) hanya boleh diundang per `orang` atau `grup` (ARCHITECTURE.md §5): `unit` dan `organisasi` ditolak 403.
+- **Kategori rapat** dikelola superadmin (`kalam_kategori_rapat`): `GET /kategori` (semua pengguna, termasuk yang nonaktif agar rekaman lama tetap berlabel), `POST /admin/kategori`, `PATCH /admin/kategori/:id` (nama, `terbatas`, `aktif`; kode slug dibuat server dan tidak berubah). UI: Admin → Kategori rapat. Sesi menyimpan `kode` di `metadata.kategori`; kode yang tak ada atau nonaktif ditolak 422 `kategori_tidak_valid`. Migrasi `0004` mengisi empat kategori bawaan (pleno, kurikulum, komite, pimpinan).
 - Undangan menjadi dasar akses untuk endpoint baca yang akan datang (transkrip, dokumen, pemutar audio): semuanya harus memakai `findReadable` di `src/akses.ts`.
 
 ### Sinkronisasi SIM-GTK
@@ -158,15 +160,16 @@ pnpm sync:simgtk             # sinkron sungguhan; jadwalkan lewat cron/systemd t
 
 ### Worker transkripsi & analisis
 
-Proses terpisah dari API (`pnpm worker`, jalankan sebagai service systemd; `pnpm worker --once` menghabiskan antrean lalu keluar). Butuh **ffmpeg + ffprobe** di PATH (`apt install ffmpeg`) dan env `CF_ACCOUNT_ID`, `CF_API_TOKEN`, `GEMINI_BASE_URL` (worker menolak start bila kosong).
+Worker **ikut berjalan di dalam proses API** secara default (`WORKER_INLINE=true`), jadi `pnpm dev:api` sudah cukup; tidak ada proses terpisah yang bisa terlupa. Untuk memisahkannya set `WORKER_INLINE=false` dan jalankan `pnpm worker` (service systemd; `pnpm worker --once` menghabiskan antrean lalu keluar). Butuh **ffmpeg + ffprobe** di PATH (`apt install ffmpeg`) dan env `CF_ACCOUNT_ID`, `CF_API_TOKEN`, `GEMINI_BASE_URL`; bila kosong worker tidak dijalankan dan API menulis peringatan jelas di log. Worker mencatat detak tiap 15 detik (`kalam_pengaturan`, kunci `worker_detak`); `GET /sesi/:uuid` memuat `pemrosesan.workerAktif` (UI menampilkan "Pemrosesan belum dimulai" bila `false`) dan `GET /admin/worker` melaporkannya untuk admin.
 
 ```
 finish -> status mentranskrip -> [tahap 1] -> menganalisis -> [tahap 2] -> selesai   (atau gagal)
 ```
 
 1. **Transkripsi**: potongan disambung berurutan, ditranskode **sekali** ke MP3 mono 16 kHz 32 kbps (`<uuid>/playback.mp3`, sekaligus audio pemutar), dipotong per `WHISPER_SEGMENT_DETIK` (600), tiap bagian dikirim ke Whisper (`@cf/openai/whisper-large-v3-turbo`, `vad_filter`). Penanda waktu memakai durasi nyata tiap bagian. Hasil per bagian di-cache, jadi percobaan ulang tidak menghabiskan kuota Whisper untuk bagian yang sudah selesai. Transkrip: `[HH:MM:SS] teks`, tanpa label pembicara (Whisper tidak melakukan diarization).
-2. **Analisis**: Gemini lewat gateway sekolah (kompatibel OpenAI `/chat/completions`); bila gagal (gateway mati atau JSON rusak) memakai `@cf/meta/llama-3.3-70b-instruct-fp8-fast`, hanya bila transkrip ≤ 40.000 karakter (di atasnya cadangan dilewati, bukan dipotong diam-diam). Hasil divalidasi (zod) lalu disimpan sebagai `kalam_dokumen` berstatus `draf`; untuk rapat, `action_items` ikut disalin ke `kalam_action_items`.
-3. **Antrean di MySQL**: klaim atomik (`UPDATE … LIMIT 1`), aman dengan beberapa worker; kunci 30 menit dengan detak tiap 5 menit (worker mati = kunci kedaluwarsa, sesi diambil lagi); maks `WORKER_MAX_PERCOBAAN` (3) per tahap dengan backoff 5, 10, 20 menit; rekaman sunyi = `gagal` langsung tanpa percobaan ulang; sesi yang kehabisan percobaan karena worker berulang mati disapu menjadi `gagal`.
+2. **Analisis**: Gemini lewat gateway sekolah (kompatibel OpenAI `/chat/completions`); bila gagal (gateway mati atau JSON rusak) memakai `@cf/meta/llama-3.3-70b-instruct-fp8-fast`, hanya bila transkrip ≤ 40.000 karakter (di atasnya cadangan dilewati, bukan dipotong diam-diam). Hasil divalidasi (zod) lalu disimpan sebagai `kalam_dokumen` berstatus `draf`; untuk rapat, `action_items` ikut disalin ke `kalam_action_items`. AI menerima **nama** kategori ("Rapat komite"), bukan kodenya.
+3. **Antrean di MySQL**: klaim atomik (`UPDATE … LIMIT 1`), aman dengan beberapa worker; kunci 30 menit dengan detak tiap 5 menit (worker mati = kunci kedaluwarsa, sesi diambil lagi); maks `WORKER_MAX_PERCOBAAN` (3) per tahap dengan backoff 5, 10, 20 menit; rekaman sunyi = `gagal` langsung tanpa percobaan ulang; sesi yang kehabisan percobaan karena worker berulang mati disapu menjadi `gagal`. **Kuota/batas laju layanan AI tidak menghabiskan percobaan**: kuota harian Cloudflare habis (429 / kode 4006) menunda sesi sampai 00:05 UTC, batas laju biasa 1 menit; sesi tetap `mentranskrip` dan `pemrosesan.cobaLagiSetelah` terisi. Progres per bagian audio (`progresSelesai/progresTotal`) terlihat di UI dan antrean admin.
+4. **Pemotongan audio di jeda hening** (`silencedetect` -35 dB, ≥0,35 dtk): potongan sekitar `WHISPER_SEGMENT_DETIK` dicari titik heningnya (±90 dtk) supaya kata tidak terbelah; tanpa hening yang cocok dipotong tepat di titik ideal. Audio ≤ 1,25× target tidak dipotong. Segmen Whisper yang berulang identik ≥3 kali beruntun (halusinasi pada rekaman sunyi) dibuang. Cache hasil per bagian memuat durasi bagian, sehingga perubahan pemotongan tidak memakai hasil lama.
 
 - Admin: `GET /admin/antrean` (sesi `mentranskrip`/`menganalisis`/`gagal` beserta galatnya, tanpa isi rekaman) dan `POST /admin/sesi/:uuid/ulangi` untuk mengulang sesi `gagal` dari tahap yang belum selesai.
 - Hasil (semuanya lewat `findReadable`): `GET /sesi/:uuid/transkrip`, `GET /sesi/:uuid/dokumen`, `GET /sesi/:uuid/audio` (MP3, mendukung `Range`).
@@ -175,7 +178,7 @@ finish -> status mentranskrip -> [tahap 1] -> menganalisis -> [tahap 2] -> seles
 - **PIC action items**: perekam menandai penanggung jawab tiap tugas dari direktori GTK lewat `PATCH /sesi/:uuid/tugas/:id` `{pic_email}` (null = lepas). Kolom `pic_email` + `pic_user_id` (terisi bila orangnya sudah pernah login); `pic_nama` tetap teks asli dari AI. Respons memuat `bisaMembaca`: `false` berarti yang ditandai belum bisa membaca rekaman (belum diundang), UI menawarkan undangan, tidak mengundang otomatis.
 - **Momen penting** (PRD FR-04): `penanda_detik` pada `finish` disimpan di `metadata.penanda` dan diteruskan ke prompt sebagai `momen_penting`.
 - `GET /gtk?cari=` (login, min. 2 huruf) mencari direktori GTK untuk pemilih guru/PIC/undangan.
-- Migrasi database bersifat inkremental (`drizzle/0000…` sampai `0002…`). Jangan generate ulang dari nol pada database yang sudah berjalan: jalankan `pnpm db:generate` lalu `pnpm db:migrate`.
+- Migrasi database bersifat inkremental (`drizzle/0000…` sampai `0004…`). Jangan generate ulang dari nol pada database yang sudah berjalan: jalankan `pnpm db:generate` lalu `pnpm db:migrate`. Setelah menarik kode baru **selalu** jalankan `pnpm db:migrate`: kode yang lebih baru dari skema gagal dengan 500 ("Unknown column"). API memperingatkan saat start bila ada migrasi tertinggal, dan `/health` melaporkannya.
 - **Saklar modul supervisi** (`kalam_pengaturan`, kunci `modul_supervisi`): **mati secara default**. Hanya superadmin yang mengubahnya (`GET/PATCH /admin/pengaturan`, UI: Admin → Pengaturan). Saat mati, server menolak membuat sesi/permintaan supervisi (403 `modul_nonaktif`) dan menyembunyikan semua sesi dan permintaan supervisi dari **semua** endpoint (daftar, detail, transkrip, audio, antrean admin, semua sesi), termasuk untuk superadmin. Datanya tidak dihapus dan muncul lagi saat dinyalakan; rekaman supervisi yang sudah diunggah tetap selesai diproses worker. `GET /auth/me` memuat `modul.supervisi` supaya UI menyembunyikan kontrolnya. Penegakan ada di `src/pengaturan.ts` (`filterModul`) dan dipakai `findOwn`/`findReadable`.
 - Perhatian: `node --env-file` **tidak menimpa** variabel yang sudah ada di shell. Jika shell Anda meng-export `DATABASE_URL` global, nilainya mengalahkan `.env`.
 

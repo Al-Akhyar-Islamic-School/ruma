@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Building2Icon, SchoolIcon, Trash2Icon, TriangleAlertIcon, UserIcon, UsersIcon } from "lucide-react";
 import { type ReactNode, useState } from "react";
@@ -11,13 +11,13 @@ import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetT
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { api, ok, pesanGalat } from "@/lib/api";
 import { useMe } from "@/lib/auth";
+import { kategoriTerbatas, useKategori } from "@/lib/kategori";
 import { cn } from "@/lib/utils";
 import { AnggotaEditor } from "./anggota-editor";
 import { type Anggota, UNIT, type Unit } from "./util";
 
 const MAKS_ORANG = 200;
 
-type Kategori = "pleno" | "kurikulum" | "komite" | "pimpinan";
 type Mode = "orang" | "grup" | "unit" | "organisasi";
 type Body =
   | { tipe: "orang"; emails: string[] }
@@ -117,6 +117,40 @@ function BarisPilihan({
   );
 }
 
+/** Satu kelompok pilihan grup dengan keadaan memuat/galat sendiri. Disembunyikan bila daftarnya kosong. */
+function KelompokGrup<T>({
+  judul,
+  judulGalat,
+  query,
+  catatan,
+  children,
+}: {
+  judul: string;
+  judulGalat: string;
+  query: UseQueryResult<T[]>;
+  catatan?: string;
+  children: (data: T[]) => ReactNode;
+}) {
+  if (query.isSuccess && query.data.length === 0) return null;
+  return (
+    <div className="space-y-2">
+      <h4 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">{judul}</h4>
+      {query.isPending ? (
+        <ListSkeleton rows={1} />
+      ) : query.isError ? (
+        <ErrorNotice error={query.error} onRetry={() => void query.refetch()} title={judulGalat} />
+      ) : (
+        <>
+          <div role="radiogroup" aria-label={judul} className="space-y-2">
+            {children(query.data)}
+          </div>
+          {catatan && <p className="text-xs text-muted-foreground">{catatan}</p>}
+        </>
+      )}
+    </div>
+  );
+}
+
 /** Sheet kelola undangan sesi. Hanya dipakai oleh perekam (server menolak yang lain dengan 404). */
 export function UndanganSheet({
   uuid,
@@ -125,14 +159,15 @@ export function UndanganSheet({
   onOpenChange,
 }: {
   uuid: string;
-  kategori?: Kategori;
+  /** Kode kategori rapat; kategori tertutup membatasi undangan ke orang atau grup. */
+  kategori?: string;
   open: boolean;
   onOpenChange: (o: boolean) => void;
 }) {
   const me = useMe();
   const qc = useQueryClient();
-  const pimpinan = kategori === "pimpinan";
-  const mode: Mode[] = pimpinan ? ["orang", "grup"] : ["orang", "grup", "unit", "organisasi"];
+  const tertutup = kategoriTerbatas(useKategori(), kategori);
+  const mode: Mode[] = tertutup ? ["orang", "grup"] : ["orang", "grup", "unit", "organisasi"];
 
   const [pilihanMode, setPilihanMode] = useState<Mode>("orang");
   const [orang, setOrang] = useState<Anggota[]>([]);
@@ -146,6 +181,7 @@ export function UndanganSheet({
     enabled: open,
   });
   const grup = useQuery({ queryKey: ["grup"], queryFn: async () => ok(await api.grup.$get()), enabled: open });
+  const ikut = useQuery({ queryKey: ["grup", "keanggotaan"], queryFn: async () => ok(await api.grup.keanggotaan.$get()), enabled: open });
 
   const diundang = undangan.data ?? [];
   const grupDiundang = new Set(diundang.flatMap((u) => (u.tipe === "grup" && u.grupId !== null ? [u.grupId] : [])));
@@ -155,7 +191,8 @@ export function UndanganSheet({
   const tambah = useMutation({
     mutationFn: async (b: Body) => ok(await api.sesi[":uuid"].undangan.$post({ param: { uuid }, json: b })),
     onSuccess: (hasil, b) => {
-      const namaGrup = b.tipe === "grup" ? (grup.data?.find((g) => g.id === b.grup_id)?.nama ?? "ini") : "";
+      const namaGrup =
+        b.tipe === "grup" ? (grup.data?.find((g) => g.id === b.grup_id)?.nama ?? ikut.data?.find((g) => g.id === b.grup_id)?.nama ?? "ini") : "";
       const { sukses, teks } = pesanHasil(b, hasil.ditambahkan, namaGrup);
       if (sukses) toast.success(teks);
       else toast.info(teks);
@@ -214,7 +251,7 @@ export function UndanganSheet({
         <Tabs value={modeAktif} onValueChange={(v) => setPilihanMode(v as Mode)} className="min-h-0 flex-1 flex-col gap-0">
           <div className="min-h-0 flex-1 space-y-8 overflow-y-auto px-4 pb-6">
             <section aria-label="Tambah undangan" className="space-y-4">
-              <TabsList className={cn("grid h-12 w-full rounded-2xl p-1", pimpinan ? "grid-cols-2" : "grid-cols-4")}>
+              <TabsList className={cn("grid h-12 w-full rounded-2xl p-1", tertutup ? "grid-cols-2" : "grid-cols-4")}>
                 {mode.map((m) => (
                   <TabsTrigger
                     key={m}
@@ -226,9 +263,9 @@ export function UndanganSheet({
                 ))}
               </TabsList>
 
-              {pimpinan && (
+              {tertutup && (
                 <p className="text-sm text-muted-foreground">
-                  Rapat pimpinan hanya bisa dibuka untuk orang atau grup tertentu, jadi undangan per unit dan seluruh organisasi tidak tersedia.
+                  Kategori rapat ini tertutup: hanya bisa dibuka untuk orang atau grup tertentu, jadi undangan per unit dan seluruh organisasi tidak tersedia.
                 </p>
               )}
 
@@ -243,11 +280,9 @@ export function UndanganSheet({
               </TabsContent>
 
               <TabsContent value="grup">
-                {grup.isPending ? (
+                {grup.isPending && ikut.isPending ? (
                   <ListSkeleton rows={2} />
-                ) : grup.isError ? (
-                  <ErrorNotice error={grup.error} onRetry={() => void grup.refetch()} title="Tidak bisa memuat grup" />
-                ) : grup.data.length === 0 ? (
+                ) : grup.isSuccess && ikut.isSuccess && grup.data.length === 0 && ikut.data.length === 0 ? (
                   <EmptyState
                     title="Belum punya grup"
                     hint="Grup mengumpulkan orang yang sering diundang bersama, jadi Anda tidak perlu memilih satu per satu."
@@ -260,24 +295,51 @@ export function UndanganSheet({
                     }
                   />
                 ) : (
-                  <div role="radiogroup" aria-label="Pilih grup" className="space-y-2">
-                    {grup.data.map((g) => (
-                      <BarisPilihan
-                        key={g.id}
-                        name="grup-undangan"
-                        checked={grupId === g.id}
-                        onSelect={() => setGrupId(g.id)}
-                        sudahDiundang={grupDiundang.has(g.id)}
-                      >
-                        <p className="truncate text-sm font-semibold">{g.nama}</p>
-                        <p className="text-xs text-muted-foreground">{g.jumlahAnggota} anggota</p>
-                      </BarisPilihan>
-                    ))}
+                  <div className="space-y-5">
+                    <KelompokGrup judul="Grup saya" judulGalat="Tidak bisa memuat grup Anda" query={grup}>
+                      {(data) =>
+                        data.map((g) => (
+                          <BarisPilihan
+                            key={g.id}
+                            name="grup-undangan"
+                            checked={grupId === g.id}
+                            onSelect={() => setGrupId(g.id)}
+                            sudahDiundang={grupDiundang.has(g.id)}
+                          >
+                            <p className="truncate text-sm font-semibold">{g.nama}</p>
+                            <p className="text-xs text-muted-foreground">{g.jumlahAnggota} anggota</p>
+                          </BarisPilihan>
+                        ))
+                      }
+                    </KelompokGrup>
+                    <KelompokGrup
+                      judul="Grup yang saya ikuti"
+                      judulGalat="Tidak bisa memuat grup yang Anda ikuti"
+                      query={ikut}
+                      catatan="Semua anggota grup akan bisa membaca rekaman ini, termasuk yang tidak Anda kenal."
+                    >
+                      {(data) =>
+                        data.map((g) => (
+                          <BarisPilihan
+                            key={g.id}
+                            name="grup-undangan"
+                            checked={grupId === g.id}
+                            onSelect={() => setGrupId(g.id)}
+                            sudahDiundang={grupDiundang.has(g.id)}
+                          >
+                            <p className="truncate text-sm font-semibold">{g.nama}</p>
+                            <p className="truncate text-xs text-muted-foreground">
+                              oleh {g.pemilik} · {g.jumlahAnggota} anggota
+                            </p>
+                          </BarisPilihan>
+                        ))
+                      }
+                    </KelompokGrup>
                   </div>
                 )}
               </TabsContent>
 
-              {!pimpinan && (
+              {!tertutup && (
                 <TabsContent value="unit">
                   <div role="radiogroup" aria-label="Pilih unit" className="space-y-2">
                     {UNIT.map((u) => (
@@ -296,14 +358,14 @@ export function UndanganSheet({
                 </TabsContent>
               )}
 
-              {!pimpinan && (
+              {!tertutup && (
                 <TabsContent value="organisasi">
                   <Alert className="rounded-2xl border-warning bg-warning/10 text-foreground">
                     <TriangleAlertIcon />
                     <AlertTitle>Terbuka untuk semua yang login</AlertTitle>
                     <AlertDescription>
                       <p>
-                        Seluruh akun Al Akhyar yang masuk ke Kalam AI akan bisa mendengarkan dan membaca rekaman ini. Pilih ini hanya bila isinya memang
+                        Seluruh akun Al Akhyar yang masuk ke Notula AI akan bisa mendengarkan dan membaca rekaman ini. Pilih ini hanya bila isinya memang
                         boleh diketahui seluruh sekolah.
                       </p>
                       {organisasiDiundang && <p className="mt-2 font-medium">Rekaman ini sudah terbuka untuk seluruh Al Akhyar.</p>}

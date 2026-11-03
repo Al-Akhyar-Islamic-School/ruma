@@ -63,7 +63,8 @@ export const sessions = mysqlTable(
 
 /** Metadata awal sesi (PRD FR-02). Rapat: kategori. Supervisi: guru, kelas, mapel, materi. */
 export type SesiMetadata = {
-  kategori?: "pleno" | "kurikulum" | "komite" | "pimpinan";
+  /** `kategoriRapat.kode`. */
+  kategori?: string;
   guruEmail?: string;
   kelas?: string;
   mapel?: string;
@@ -103,6 +104,9 @@ export const sesi = mysqlTable(
     // Backoff antar percobaan gagal; null = boleh diambil sekarang.
     cobaLagiSetelah: timestamp("coba_lagi_setelah"),
     galat: varchar("galat", { length: 1000 }),
+    // Progres tahap transkripsi (bagian audio yang sudah ditranskrip); null di luar tahap itu.
+    progresSelesai: int("progres_selesai", { unsigned: true }),
+    progresTotal: int("progres_total", { unsigned: true }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
@@ -301,5 +305,20 @@ export const pengaturan = mysqlTable("kalam_pengaturan", {
   kunci: varchar("kunci", { length: 64 }).primaryKey(),
   nilai: json("nilai").$type<unknown>().notNull(),
   diubahOleh: ref("diubah_oleh").references(() => users.id),
+  updatedAt: updatedAt(),
+});
+
+/**
+ * Kategori rapat yang dikelola superadmin. `kode` stabil (disimpan di `sesi.metadata.kategori`), `nama` bisa diubah.
+ * `terbatas`: rapat kategori ini hanya boleh dibuka untuk orang/grup tertentu, bukan unit/organisasi (ARCHITECTURE.md §5).
+ */
+export const kategoriRapat = mysqlTable("kalam_kategori_rapat", {
+  id: id(),
+  kode: varchar("kode", { length: 40 }).notNull().unique(),
+  nama: varchar("nama", { length: 100 }).notNull(),
+  terbatas: boolean("terbatas").notNull().default(false),
+  aktif: boolean("aktif").notNull().default(true),
+  urutan: int("urutan").notNull().default(0),
+  createdAt: createdAt(),
   updatedAt: updatedAt(),
 });

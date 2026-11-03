@@ -26,7 +26,7 @@ const BITRATE = 32_000;
 function pesanMikrofon(e: unknown): string {
   const nama = e instanceof DOMException ? e.name : "";
   if (nama === "NotAllowedError" || nama === "SecurityError") {
-    return "Izin mikrofon ditolak. Izinkan mikrofon untuk Kalam AI di pengaturan peramban, lalu ketuk Mulai merekam lagi.";
+    return "Izin mikrofon ditolak. Izinkan mikrofon untuk Notula AI di pengaturan peramban, lalu ketuk Mulai merekam lagi.";
   }
   if (nama === "NotFoundError" || nama === "OverconstrainedError") return "Mikrofon tidak ditemukan di perangkat ini.";
   if (nama === "NotReadableError" || nama === "AbortError") return "Mikrofon sedang dipakai aplikasi lain. Tutup aplikasi itu, lalu coba lagi.";

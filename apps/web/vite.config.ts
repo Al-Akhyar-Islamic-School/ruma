@@ -16,8 +16,8 @@ export default defineConfig({
       registerType: "autoUpdate",
       includeAssets: ["icon.svg"],
       manifest: {
-        name: "Kalam AI",
-        short_name: "Kalam",
+        name: "Notula AI",
+        short_name: "Notula",
         description: "Notulensi rapat dan supervisi kelas dari rekaman suara, Sekolah Islam Al Akhyar.",
         lang: "id",
         start_url: "/",

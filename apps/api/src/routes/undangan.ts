@@ -1,11 +1,12 @@
 import { zValidator } from "@hono/zod-validator";
-import { and, eq } from "drizzle-orm";
+import { and, eq, exists, or, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { findOwn } from "../akses.js";
 import type { AuthEnv } from "../auth/session.js";
 import { db } from "../db/index.js";
-import { grup, gtk, sesiUndangan, UNIT } from "../db/schema.js";
+import { grup, grupAnggota, gtk, sesiUndangan, UNIT } from "../db/schema.js";
+import { kategoriByKode } from "../kategori.js";
 import { emailBaku } from "../validasi.js";
 
 const uuidParam = z.object({ uuid: z.uuid() });
@@ -51,9 +52,10 @@ export const undanganRoutes = new Hono<AuthEnv>()
     const s = await findOwn(user, c.req.valid("param").uuid);
     if (!s) return c.json({ error: "not_found" }, 404);
 
-    // ARCHITECTURE.md §5: rapat berlabel Rahasia/Pimpinan tidak boleh terbuka untuk staf secara massal.
-    if (s.metadata.kategori === "pimpinan" && (b.tipe === "unit" || b.tipe === "organisasi")) {
-      return c.json({ error: "kategori_pimpinan_hanya_orang_atau_grup" }, 403);
+    // ARCHITECTURE.md §5: rapat berkategori tertutup (mis. Pimpinan) tidak boleh terbuka untuk staf secara massal.
+    if (s.metadata.kategori && (b.tipe === "unit" || b.tipe === "organisasi")) {
+      const k = await kategoriByKode(s.metadata.kategori);
+      if (k?.terbatas) return c.json({ error: "kategori_pimpinan_hanya_orang_atau_grup" }, 403);
     }
 
     const dasar = { sesiId: s.id, dibuatOleh: user.id };
@@ -66,9 +68,25 @@ export const undanganRoutes = new Hono<AuthEnv>()
         break;
       }
       case "grup": {
-        const g = await db.query.grup.findFirst({
-          where: and(eq(grup.id, b.grup_id), eq(grup.ownerId, user.id)),
-        });
+        // Grup yang boleh dipakai: milik saya, atau grup yang menyertakan saya sebagai anggota.
+        const [g] = await db
+          .select({ id: grup.id })
+          .from(grup)
+          .where(
+            and(
+              eq(grup.id, b.grup_id),
+              or(
+                eq(grup.ownerId, user.id),
+                exists(
+                  db
+                    .select({ x: sql`1` })
+                    .from(grupAnggota)
+                    .where(and(eq(grupAnggota.grupId, grup.id), eq(grupAnggota.email, user.email.toLowerCase()))),
+                ),
+              ),
+            ),
+          )
+          .limit(1);
         if (!g) return c.json({ error: "grup_tidak_ditemukan" }, 404);
         rows = [{ ...dasar, tipe: "grup", grupId: g.id, targetKey: `grup:${g.id}` }];
         break;

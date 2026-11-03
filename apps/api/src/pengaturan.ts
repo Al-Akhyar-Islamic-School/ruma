@@ -45,3 +45,28 @@ export async function filterModul() {
 export async function filterModulPermintaan() {
   return (await modulSupervisiAktif()) ? undefined : ne(permintaanSesi.tipeSesi, "supervisi_kelas");
 }
+
+const KUNCI_DETAK_WORKER = "worker_detak";
+/** Worker dianggap mati bila tidak ada detak sebanyak ini (detak dikirim tiap 15 detik). */
+const DETAK_KEDALUWARSA_MS = 60_000;
+
+/** Dipanggil worker secara berkala: tanda bahwa antrean pemrosesan benar-benar dijaga. */
+export async function catatDetakWorker() {
+  const nilai = Date.now();
+  await db.insert(pengaturan).values({ kunci: KUNCI_DETAK_WORKER, nilai }).onDuplicateKeyUpdate({ set: { nilai } });
+}
+
+/** Waktu (ms epoch) detak terakhir worker, atau null bila belum pernah terdeteksi. */
+export async function detakTerakhirWorker(): Promise<number | null> {
+  const [r] = await db
+    .select({ nilai: pengaturan.nilai })
+    .from(pengaturan)
+    .where(eq(pengaturan.kunci, KUNCI_DETAK_WORKER))
+    .limit(1);
+  return typeof r?.nilai === "number" ? r.nilai : null;
+}
+
+export async function workerAktif(): Promise<boolean> {
+  const t = await detakTerakhirWorker();
+  return t !== null && Date.now() - t < DETAK_KEDALUWARSA_MS;
+}

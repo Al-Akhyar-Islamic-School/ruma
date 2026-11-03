@@ -1,6 +1,6 @@
-# Product Requirements Document (PRD): Kalam AI
+# Product Requirements Document (PRD): Notula AI
 
-**Aplikasi:** Kalam AI — Al Akhyar Meeting Intelligence & Voice Notula  
+**Aplikasi:** Notula AI — Al Akhyar Meeting Intelligence & Voice Notula
 **Fokus:** Modul Notulensi Rapat & Modul Supervisi Akademik / Observasi Kelas  
 **Target Platform:** Progressive Web App (PWA) Mobile/Tablet/Desktop  
 **Status:** Engineering Ready  

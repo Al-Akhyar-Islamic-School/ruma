@@ -1,23 +1,23 @@
 import { existsSync } from "node:fs";
-import { mkdir, readdir, readFile, rename, rm, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { asc, eq } from "drizzle-orm";
 import { analisis } from "./ai/analisis.js";
 import { transkripsi, type HasilWhisper } from "./ai/cloudflare.js";
 import { GalatPermanen } from "./ai/layanan.js";
-import { durasiDetik, keMp3, potong, sambung } from "./audio.js";
+import { daftarBagianLama, durasiDetik, keMp3, potongDiHening, sambung } from "./audio.js";
 import { db } from "./db/index.js";
 import { actionItems, audioChunks, dokumen, gtk, sesi, transkrip, users, type Segment } from "./db/schema.js";
 import { env } from "./env.js";
 import { audioStorage } from "./storage.js";
+import { kategoriByKode } from "./kategori.js";
+import { buangPengulangan, hms, susunTeks } from "./transkrip.js";
 
 type Sesi = typeof sesi.$inferSelect;
 
 // Sekolah di Makassar: tanggal dokumen mengikuti zona ini, bukan UTC server.
 const ZONA = "Asia/Makassar";
 const tanggalLokal = (d: Date) => new Intl.DateTimeFormat("sv-SE", { timeZone: ZONA }).format(d);
-/** Detik -> "HH:MM:SS", format penanda waktu di transkrip dan di daftar momen penting. */
-const hms = (detik: number) => new Date(detik * 1000).toISOString().slice(11, 19);
 
 /** Minimal teks bermakna agar transkrip dianggap berisi percakapan (bukan rekaman sunyi/derau). */
 const MIN_KARAKTER_TRANSKRIP = 20;
@@ -50,18 +50,18 @@ export async function tahapTranskripsi(s: Sesi) {
     await rm(raw);
   }
 
-  // Bersihkan potongan lama (panjang segmen bisa berubah antar percobaan), lalu potong ulang tanpa transkode.
-  await Promise.all(
-    (await readdir(dir)).filter((n) => /^seg_\d+\.mp3$/.test(n)).map((n) => rm(path.join(dir, n))),
-  );
-  const bagian = await potong(playback, dir, env.WHISPER_SEGMENT_DETIK);
+  // Bersihkan potongan lama, lalu potong ulang tanpa transkode di titik hening (kalimat tidak terpotong).
+  await Promise.all((await daftarBagianLama(dir)).map((f) => rm(f)));
+  const bagian = await potongDiHening(playback, dir, env.WHISPER_SEGMENT_DETIK);
+  await db.update(sesi).set({ progresSelesai: 0, progresTotal: bagian.length }).where(eq(sesi.id, s.id));
 
   // Garis waktu: durasi nyata tiap bagian (bukan asumsi N detik) supaya penanda waktu tidak bergeser.
   const semua: Segment[] = [];
   let offset = 0;
   for (const [i, berkas] of bagian.entries()) {
     const dur = await durasiDetik(berkas);
-    const cache = path.join(dir, `whisper_${env.WHISPER_SEGMENT_DETIK}_${i}.json`);
+    // Kunci cache memuat durasi bagian: bila pemotongan berubah (panjang berbeda), cache lama tidak dipakai.
+    const cache = path.join(dir, `whisper_${i}_${Math.round(dur * 1000)}.json`);
     let h: HasilWhisper;
     if (existsSync(cache)) {
       h = JSON.parse(await readFile(cache, "utf8")) as HasilWhisper;
@@ -75,10 +75,12 @@ export async function tahapTranskripsi(s: Sesi) {
       if (text) semua.push({ start: x.start + offset, end: x.end + offset, text });
     }
     offset += dur;
+    await db.update(sesi).set({ progresSelesai: i + 1 }).where(eq(sesi.id, s.id));
   }
 
-  const rawText = semua.map((x) => `[${hms(x.start)}] ${x.text}`).join("\n");
-  if (semua.map((x) => x.text).join(" ").length < MIN_KARAKTER_TRANSKRIP) {
+  const bersih = buangPengulangan(semua);
+  const rawText = susunTeks(bersih);
+  if (bersih.map((x) => x.text).join(" ").length < MIN_KARAKTER_TRANSKRIP) {
     throw new GalatPermanen("transkrip kosong: rekaman sunyi atau tidak terdengar");
   }
 
@@ -86,7 +88,7 @@ export async function tahapTranskripsi(s: Sesi) {
     const nilai = {
       sesiId: s.id,
       rawText,
-      segments: semua,
+      segments: bersih,
       whisperModel: env.WHISPER_MODEL,
       durasiTranskripMs: Date.now() - mulai,
     };
@@ -94,7 +96,15 @@ export async function tahapTranskripsi(s: Sesi) {
     // Lanjut ke tahap 2 dengan kunci tetap dipegang; percobaan dihitung ulang untuk tahap baru.
     await tx
       .update(sesi)
-      .set({ status: "menganalisis", audioPath: playbackKey, durasiDetik: Math.round(offset), percobaan: 1, galat: null })
+      .set({
+        status: "menganalisis",
+        audioPath: playbackKey,
+        durasiDetik: Math.round(offset),
+        percobaan: 1,
+        galat: null,
+        progresSelesai: null,
+        progresTotal: null,
+      })
       .where(eq(sesi.id, s.id));
   });
   await rm(dir, { recursive: true, force: true });
@@ -122,7 +132,9 @@ export async function tahapAnalisis(s: Sesi) {
   let guruTargetId: number | null = null;
 
   if (s.tipeSesi === "rapat") {
-    konteks = { judul_sesi: s.judul, tanggal, kategori_rapat: meta.kategori, momen_penting: momenPenting };
+    // AI membaca nama kategori ("Rapat komite"), bukan kodenya.
+    const kategoriNama = meta.kategori ? ((await kategoriByKode(meta.kategori))?.nama ?? meta.kategori) : undefined;
+    konteks = { judul_sesi: s.judul, tanggal, kategori_rapat: kategoriNama, momen_penting: momenPenting };
     metadata = { judul_rapat: s.judul, tanggal, durasi_menit: durasiMenit, kategori: meta.kategori ?? null };
   } else {
     const guru = (await namaResmi(meta.guruEmail)) ?? meta.guruEmail;

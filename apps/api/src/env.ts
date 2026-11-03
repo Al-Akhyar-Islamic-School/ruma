@@ -49,6 +49,11 @@ const schema = z.object({
   WHISPER_SEGMENT_DETIK: z.coerce.number().int().min(5).max(1800).default(600),
   WORKER_POLL_DETIK: z.coerce.number().int().min(1).default(10),
   WORKER_MAX_PERCOBAAN: z.coerce.number().int().min(1).default(3),
+  // Jalankan worker di dalam proses API (default). "false" = dijalankan sebagai proses sendiri (`pnpm worker`).
+  WORKER_INLINE: z
+    .string()
+    .default("true")
+    .transform((v) => !["false", "0", "no"].includes(v.trim().toLowerCase())),
 });
 
 export const env = schema.parse(process.env);

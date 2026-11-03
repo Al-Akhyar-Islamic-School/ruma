@@ -18,6 +18,7 @@ import { Route as AppPermintaanRouteImport } from './routes/_app.permintaan'
 import { Route as AppAdminIndexRouteImport } from './routes/_app.admin.index'
 import { Route as AppAdminAntreanRouteImport } from './routes/_app.admin.antrean'
 import { Route as AppAdminGtkRouteImport } from './routes/_app.admin.gtk'
+import { Route as AppAdminKategoriRouteImport } from './routes/_app.admin.kategori'
 import { Route as AppAdminPengaturanRouteImport } from './routes/_app.admin.pengaturan'
 import { Route as AppAdminPenggunaRouteImport } from './routes/_app.admin.pengguna'
 import { Route as AppAdminPermintaanRouteImport } from './routes/_app.admin.permintaan'
@@ -70,6 +71,11 @@ const AppAdminGtkRoute = AppAdminGtkRouteImport.update({
   path: '/gtk',
   getParentRoute: () => AppAdminRoute,
 } as any)
+const AppAdminKategoriRoute = AppAdminKategoriRouteImport.update({
+  id: '/kategori',
+  path: '/kategori',
+  getParentRoute: () => AppAdminRoute,
+} as any)
 const AppAdminPengaturanRoute = AppAdminPengaturanRouteImport.update({
   id: '/pengaturan',
   path: '/pengaturan',
@@ -114,6 +120,7 @@ export interface FileRoutesByFullPath {
   '/permintaan': typeof AppPermintaanRoute
   '/admin/antrean': typeof AppAdminAntreanRoute
   '/admin/gtk': typeof AppAdminGtkRoute
+  '/admin/kategori': typeof AppAdminKategoriRoute
   '/admin/pengaturan': typeof AppAdminPengaturanRoute
   '/admin/pengguna': typeof AppAdminPenggunaRoute
   '/admin/permintaan': typeof AppAdminPermintaanRoute
@@ -130,6 +137,7 @@ export interface FileRoutesByTo {
   '/': typeof AppIndexRoute
   '/admin/antrean': typeof AppAdminAntreanRoute
   '/admin/gtk': typeof AppAdminGtkRoute
+  '/admin/kategori': typeof AppAdminKategoriRoute
   '/admin/pengaturan': typeof AppAdminPengaturanRoute
   '/admin/pengguna': typeof AppAdminPenggunaRoute
   '/admin/permintaan': typeof AppAdminPermintaanRoute
@@ -149,6 +157,7 @@ export interface FileRoutesById {
   '/_app/': typeof AppIndexRoute
   '/_app/admin/antrean': typeof AppAdminAntreanRoute
   '/_app/admin/gtk': typeof AppAdminGtkRoute
+  '/_app/admin/kategori': typeof AppAdminKategoriRoute
   '/_app/admin/pengaturan': typeof AppAdminPengaturanRoute
   '/_app/admin/pengguna': typeof AppAdminPenggunaRoute
   '/_app/admin/permintaan': typeof AppAdminPermintaanRoute
@@ -168,6 +177,7 @@ export interface FileRouteTypes {
     | '/permintaan'
     | '/admin/antrean'
     | '/admin/gtk'
+    | '/admin/kategori'
     | '/admin/pengaturan'
     | '/admin/pengguna'
     | '/admin/permintaan'
@@ -184,6 +194,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin/antrean'
     | '/admin/gtk'
+    | '/admin/kategori'
     | '/admin/pengaturan'
     | '/admin/pengguna'
     | '/admin/permintaan'
@@ -202,6 +213,7 @@ export interface FileRouteTypes {
     | '/_app/'
     | '/_app/admin/antrean'
     | '/_app/admin/gtk'
+    | '/_app/admin/kategori'
     | '/_app/admin/pengaturan'
     | '/_app/admin/pengguna'
     | '/_app/admin/permintaan'
@@ -282,6 +294,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminGtkRouteImport
       parentRoute: typeof AppAdminRoute
     }
+    '/_app/admin/kategori': {
+      id: '/_app/admin/kategori'
+      path: '/kategori'
+      fullPath: '/admin/kategori'
+      preLoaderRoute: typeof AppAdminKategoriRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
     '/_app/admin/pengaturan': {
       id: '/_app/admin/pengaturan'
       path: '/pengaturan'
@@ -337,6 +356,7 @@ declare module '@tanstack/react-router' {
 interface AppAdminRouteChildren {
   AppAdminAntreanRoute: typeof AppAdminAntreanRoute
   AppAdminGtkRoute: typeof AppAdminGtkRoute
+  AppAdminKategoriRoute: typeof AppAdminKategoriRoute
   AppAdminPengaturanRoute: typeof AppAdminPengaturanRoute
   AppAdminPenggunaRoute: typeof AppAdminPenggunaRoute
   AppAdminPermintaanRoute: typeof AppAdminPermintaanRoute
@@ -347,6 +367,7 @@ interface AppAdminRouteChildren {
 const AppAdminRouteChildren: AppAdminRouteChildren = {
   AppAdminAntreanRoute: AppAdminAntreanRoute,
   AppAdminGtkRoute: AppAdminGtkRoute,
+  AppAdminKategoriRoute: AppAdminKategoriRoute,
   AppAdminPengaturanRoute: AppAdminPengaturanRoute,
   AppAdminPenggunaRoute: AppAdminPenggunaRoute,
   AppAdminPermintaanRoute: AppAdminPermintaanRoute,

@@ -5,8 +5,17 @@ import { z } from "zod";
 import { requireAuth, requireRole, type AuthEnv } from "../auth/session.js";
 import { db } from "../db/index.js";
 import { permintaanSesi, PERMINTAAN_STATUS, ROLES, sesi, transkrip, users } from "../db/schema.js";
+import { kategoriAdminRoutes } from "./kategori.js";
 import { MODERATOR } from "../permissions.js";
-import { filterModul, filterModulPermintaan, modulSupervisiAktif, riwayatModulSupervisi, setModulSupervisi } from "../pengaturan.js";
+import {
+  detakTerakhirWorker,
+  filterModul,
+  filterModulPermintaan,
+  modulSupervisiAktif,
+  riwayatModulSupervisi,
+  setModulSupervisi,
+  workerAktif,
+} from "../pengaturan.js";
 import { SimgtkTidakDikonfigurasi, SinkronSedangBerjalan, sinkronGtk, statusGtk } from "../simgtk.js";
 
 const WAKTU_PERSETUJUAN_DEFAULT_MS = 7 * 24 * 60 * 60 * 1000;
@@ -172,6 +181,11 @@ export const admin = new Hono<AuthEnv>()
   })
 
   // --- Operasional antrean pemrosesan (admin & superadmin): hanya metadata, bukan isi rekaman ---
+  // Apakah ada worker yang menjaga antrean (detak < 60 dtk). UI memperingatkan admin bila tidak.
+  .get("/worker", requireRole(...MODERATOR), async (c) => {
+    const detak = await detakTerakhirWorker();
+    return c.json({ aktif: await workerAktif(), detakTerakhir: detak === null ? null : new Date(detak).toISOString() });
+  })
   .get("/antrean", requireRole(...MODERATOR), async (c) => {
     const rows = await db
       .select({
@@ -182,6 +196,8 @@ export const admin = new Hono<AuthEnv>()
         percobaan: sesi.percobaan,
         galat: sesi.galat,
         cobaLagiSetelah: sesi.cobaLagiSetelah,
+        progresSelesai: sesi.progresSelesai,
+        progresTotal: sesi.progresTotal,
         createdAt: sesi.createdAt,
         perekam: { id: users.id, name: users.name },
       })
@@ -224,4 +240,7 @@ export const admin = new Hono<AuthEnv>()
       await setModulSupervisi(c.req.valid("json").modul_supervisi, c.var.user.id);
       return c.json({ modulSupervisi: await modulSupervisiAktif(), terakhirDiubah: await riwayatModulSupervisi() });
     },
-  );
+  )
+
+  // --- Kategori rapat (hanya superadmin) ---
+  .route("/kategori", kategoriAdminRoutes);

@@ -2,10 +2,10 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Navigate, useNavigate } from "@tanstack/react-router";
 import { LoaderCircleIcon } from "lucide-react";
 import { ErrorNotice } from "@/components/app/feedback";
-import { KATEGORI_LABEL } from "@/components/app/sesi-card";
 import { Button } from "@/components/ui/button";
 import { ApiError, api, ok } from "@/lib/api";
 import { useMe } from "@/lib/auth";
+import { labelKategori, useKategori } from "@/lib/kategori";
 import { ambilSesiLokal, hapusSesiLokal, ringkasChunk, type SesiLokal } from "./db";
 import { KerangkaGelap } from "./kerangka";
 import { LayarModulNonaktif } from "./layar-modul-nonaktif";
@@ -18,7 +18,7 @@ type SesiServer = Awaited<ReturnType<typeof ambilSesiServer>>;
 
 type Awal = { server: SesiServer | null; lokal: SesiLokal | null; jumlahChunkLokal: number; supervisiTidakTersedia: boolean };
 
-type Meta = { kelas?: string; mapel?: string; kategori?: keyof typeof KATEGORI_LABEL };
+type Meta = { kelas?: string; mapel?: string; kategori?: string };
 
 const bacaMeta = (m: unknown): Meta => (m && typeof m === "object" ? (m as Meta) : {});
 
@@ -61,6 +61,7 @@ export function LayarLive({ uuid }: { uuid: string }) {
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   });
+  const daftarKategori = useKategori();
 
   if (awal.isPending) {
     return (
@@ -120,7 +121,7 @@ export function LayarLive({ uuid }: { uuid: string }) {
     tipeSesi === "supervisi_kelas"
       ? [meta.kelas, meta.mapel].filter(Boolean).join(" — ") || null
       : meta.kategori
-        ? (KATEGORI_LABEL[meta.kategori] ?? null)
+        ? labelKategori(daftarKategori, meta.kategori)
         : null;
 
   return (

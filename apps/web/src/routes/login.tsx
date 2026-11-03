@@ -34,10 +34,8 @@ function Login() {
             <AudioLinesIcon className="size-6" aria-hidden />
           </span>
           <div className="leading-tight">
-            <p className="text-xl font-extrabold tracking-tight">Kalam AI</p>
-            <p dir="rtl" lang="ar" className="text-sm text-muted-foreground">
-              القلم
-            </p>
+            <p className="text-xl font-extrabold tracking-tight">Notula AI</p>
+            <p className="text-sm text-muted-foreground">Sekolah Islam Al Akhyar</p>
           </div>
         </div>
         <div className="space-y-3">
@@ -45,7 +43,7 @@ function Login() {
             Rekam rapat atau kelas. Notulen jadi sendiri.
           </h1>
           <p className="text-muted-foreground">
-            Cukup tekan rekam di ponsel. Setelah selesai, Kalam menyusun notulen rapat atau lembar supervisi untuk Anda
+            Cukup tekan rekam di ponsel. Setelah selesai, Notula menyusun notulen rapat atau lembar supervisi untuk Anda
             periksa dan setujui.
           </p>
         </div>

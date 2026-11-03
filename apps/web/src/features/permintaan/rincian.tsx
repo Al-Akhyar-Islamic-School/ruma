@@ -1,12 +1,12 @@
 import { GraduationCapIcon, UsersIcon } from "lucide-react";
 import type { ReactNode } from "react";
-import { KATEGORI_LABEL } from "@/components/app/sesi-card";
 import { Badge } from "@/components/ui/badge";
+import { type KategoriRapat, labelKategori, useKategori } from "@/lib/kategori";
 
 export type TipeSesiPermintaan = "rapat" | "supervisi_kelas";
 
 export type MetadataPermintaan = {
-  kategori?: keyof typeof KATEGORI_LABEL;
+  kategori?: string;
   guruEmail?: string;
   kelas?: string;
   mapel?: string;
@@ -78,8 +78,8 @@ export function BadgeStatus({ status }: { status: TampilanStatus }) {
   }
 }
 
-function ringkasMetadata(p: DataPermintaan): string {
-  if (p.tipeSesi === "rapat") return p.metadata.kategori ? KATEGORI_LABEL[p.metadata.kategori] : "";
+function ringkasMetadata(p: DataPermintaan, kategori: readonly KategoriRapat[]): string {
+  if (p.tipeSesi === "rapat") return p.metadata.kategori ? labelKategori(kategori, p.metadata.kategori) : "";
   return [p.metadata.guruEmail && `Guru: ${p.metadata.guruEmail}`, p.metadata.kelas, p.metadata.mapel, p.metadata.materi]
     .filter(Boolean)
     .join(" · ");
@@ -98,7 +98,7 @@ function Baris({ label, children }: { label: string; children: ReactNode }) {
 export function RincianPermintaan({ p, atas, children }: { p: DataPermintaan; atas?: ReactNode; children?: ReactNode }) {
   const supervisi = p.tipeSesi === "supervisi_kelas";
   const Ikon = supervisi ? GraduationCapIcon : UsersIcon;
-  const ringkas = ringkasMetadata(p);
+  const ringkas = ringkasMetadata(p, useKategori());
   const keputusan = p.status !== "menunggu";
   return (
     <div className="flex gap-3">

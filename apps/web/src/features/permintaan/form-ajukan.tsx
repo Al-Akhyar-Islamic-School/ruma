@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 import { toast } from "sonner";
 import { Segmented } from "@/components/app/segmented";
-import { KATEGORI_LABEL } from "@/components/app/sesi-card";
+import { kategoriAktif, useKategori } from "@/lib/kategori";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,8 +19,6 @@ const ALASAN_MIN = 10;
 const ALASAN_MAKS = 2000;
 const DURASI_MAKS = 480;
 const TANPA_KATEGORI = "tanpa";
-
-type Kategori = keyof typeof KATEGORI_LABEL;
 
 /** Sheet "Ajukan rekaman". Isinya dipasang hanya saat terbuka sehingga isian selalu mulai dari kosong. */
 export function FormAjukan({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
@@ -41,7 +39,8 @@ function IsiForm({ onSelesai }: { onSelesai: () => void }) {
   const qc = useQueryClient();
   const [tipe, setTipe] = useState<TipeSesiPermintaan>("rapat");
   const [judul, setJudul] = useState("");
-  const [kategori, setKategori] = useState<Kategori | typeof TANPA_KATEGORI>(TANPA_KATEGORI);
+  const [kategori, setKategori] = useState<string>(TANPA_KATEGORI);
+  const daftarKategori = kategoriAktif(useKategori());
   const [guru, setGuru] = useState<OrangGtk | null>(null);
   const [kelas, setKelas] = useState("");
   const [mapel, setMapel] = useState("");
@@ -149,15 +148,15 @@ function IsiForm({ onSelesai }: { onSelesai: () => void }) {
       ) : (
         <div className="space-y-2">
           <Label htmlFor="perm-kategori">Kategori rapat (opsional)</Label>
-          <Select value={kategori} onValueChange={(v) => setKategori(v as Kategori | typeof TANPA_KATEGORI)}>
+          <Select value={kategori} onValueChange={setKategori}>
             <SelectTrigger id="perm-kategori" className="h-12 w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={TANPA_KATEGORI}>Tanpa kategori</SelectItem>
-              {(Object.keys(KATEGORI_LABEL) as Kategori[]).map((k) => (
-                <SelectItem key={k} value={k}>
-                  {KATEGORI_LABEL[k]}
+              {daftarKategori.map((k) => (
+                <SelectItem key={k.kode} value={k.kode}>
+                  {k.nama}
                 </SelectItem>
               ))}
             </SelectContent>

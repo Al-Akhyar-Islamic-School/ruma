@@ -58,13 +58,21 @@ const PESAN: Record<string, string> = {
   sesi_sudah_ditutup: "Sesi ini sudah ditutup.",
   melebihi_durasi_izin: "Durasi rekaman melebihi batas yang diizinkan.",
   chunk_tidak_lengkap: "Sebagian potongan audio belum terunggah.",
-  kategori_pimpinan_hanya_orang_atau_grup: "Rapat pimpinan hanya bisa dibuka untuk orang atau grup tertentu.",
+  kategori_pimpinan_hanya_orang_atau_grup: "Kategori rapat ini tertutup: hanya bisa dibuka untuk orang atau grup tertentu.",
   belum_disetujui: "Permintaan ini belum disetujui.",
   persetujuan_kedaluwarsa: "Persetujuan sudah kedaluwarsa. Ajukan permintaan baru.",
   persetujuan_sudah_dipakai: "Persetujuan ini sudah dipakai untuk satu sesi.",
   terlalu_banyak_permintaan_menunggu: "Terlalu banyak permintaan yang masih menunggu. Tunggu keputusan admin.",
   tidak_perlu_permintaan: "Anda sudah boleh merekam langsung tanpa permintaan.",
+  kategori_sudah_ada: "Kategori dengan nama itu sudah ada.",
+  kategori_tidak_valid: "Kategori tidak dikenal atau sudah dinonaktifkan.",
   modul_nonaktif: "Modul ini sedang dinonaktifkan oleh admin.",
+  grup_tidak_ditemukan: "Grup tidak ditemukan, atau Anda bukan lagi anggotanya.",
+  // Galat server tak terduga (mis. database belum dimigrasi). Bukan kesalahan pengguna: arahkan ke admin.
+  server_error: "Server sedang bermasalah. Coba lagi sebentar; bila berulang, hubungi admin.",
+  http_500: "Server sedang bermasalah. Coba lagi sebentar; bila berulang, hubungi admin.",
+  http_502: "Server tidak bisa dijangkau. Coba lagi sebentar.",
+  http_503: "Server sedang tidak tersedia. Coba lagi sebentar.",
 };
 
 /** Pesan galat berbahasa Indonesia untuk ditampilkan ke pengguna. */

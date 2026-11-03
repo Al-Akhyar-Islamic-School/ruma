@@ -1,10 +1,10 @@
 import { zValidator } from "@hono/zod-validator";
-import { and, count, desc, eq } from "drizzle-orm";
+import { and, count, desc, eq, ne, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { requireAuth, type AuthEnv } from "../auth/session.js";
 import { db } from "../db/index.js";
-import { grup, grupAnggota, gtk } from "../db/schema.js";
+import { grup, grupAnggota, gtk, users } from "../db/schema.js";
 import { emailBaku } from "../validasi.js";
 
 const MAX_ANGGOTA = 500;
@@ -30,6 +30,32 @@ export const grupRoutes = new Hono<AuthEnv>()
       .groupBy(grup.id)
       .orderBy(desc(grup.updatedAt));
     return c.json(rows);
+  })
+  // Grup milik orang lain yang menyertakan saya (baca-saja). Harus terdaftar sebelum "/:id".
+  // Sengaja tanpa daftar anggota lain: anggota tahu grupnya dan siapa pemiliknya, bukan siapa saja teman sekelompoknya.
+  .get("/keanggotaan", async (c) => {
+    const rows = await db
+      .select({
+        id: grup.id,
+        nama: grup.nama,
+        pemilik: users.name,
+        jumlahAnggota: sql<number>`(select count(*) from kalam_grup_anggota ga where ga.grup_id = ${grup.id})`.mapWith(Number),
+      })
+      .from(grupAnggota)
+      .innerJoin(grup, eq(grup.id, grupAnggota.grupId))
+      .innerJoin(users, eq(users.id, grup.ownerId))
+      .where(and(eq(grupAnggota.email, c.var.user.email.toLowerCase()), ne(grup.ownerId, c.var.user.id)))
+      .orderBy(grup.nama);
+    return c.json(rows);
+  })
+  // Anggota keluar dari grup: hanya menghapus keanggotaan saya; grup dan anggota lain tidak berubah.
+  // Akses ke rekaman yang diundang lewat grup ini ikut hilang.
+  .delete("/keanggotaan/:id", zValidator("param", idParam), async (c) => {
+    const [res] = await db
+      .delete(grupAnggota)
+      .where(and(eq(grupAnggota.grupId, c.req.valid("param").id), eq(grupAnggota.email, c.var.user.email.toLowerCase())));
+    if (res.affectedRows === 0) return c.json({ error: "not_found" }, 404);
+    return c.json({ ok: true });
   })
   .get("/:id", zValidator("param", idParam), async (c) => {
     const g = await milik(c.var.user.id, c.req.valid("param").id);
