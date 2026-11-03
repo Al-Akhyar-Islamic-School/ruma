@@ -63,11 +63,20 @@ async function pindahkanKeFolder(token: string, fileId: string, folderId: string
   }
 }
 
-/** Bagikan berkas Google Docs (role: reader) ke email peserta yang diundang */
-async function bagikanKePeserta(token: string, fileId: string, emailList: string[]): Promise<void> {
+/** Bagikan berkas Google Docs (role: reader) ke email peserta yang diundang + kirim notifikasi email */
+async function bagikanKePeserta(
+  token: string,
+  fileId: string,
+  emailList: string[],
+  judulRapat: string,
+  pengirimNama?: string
+): Promise<void> {
+  const pesanEmail = `Assalamu'alaikum Wr. Wb.\n\nNotulensi resmi untuk rapat "${judulRapat}" telah disetujui${pengirimNama ? ` oleh ${pengirimNama}` : ""} dan dibagikan kepada Anda melalui Google Docs.\n\nDisusun otomatis dan dikirim melalui ruma. (Al Akhyar Meeting Companion).`;
+
   for (const email of emailList) {
     try {
-      await fetch(`${DRIVE_BASE}/${fileId}/permissions?sendNotificationEmail=false`, {
+      const url = `${DRIVE_BASE}/${fileId}/permissions?sendNotificationEmail=true&emailMessage=${encodeURIComponent(pesanEmail)}`;
+      await fetch(url, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -195,10 +204,10 @@ export async function eksporKeGoogleDocs(
     const err = await resUpdate.text();
     throw new Error(`Gagal memformat dokumen Google Docs resmi: ${err}`);
   }
-  // 5. Bagikan berkas Docs ke seluruh email peserta undangan (role reader)
+  // 5. Bagikan berkas Docs ke seluruh email peserta undangan (role reader) + kirim notifikasi email Google Drive
   if (pesertaUndangan && pesertaUndangan.length > 0) {
     const emailList = [...new Set(pesertaUndangan.map((p) => p.email.toLowerCase()).filter(Boolean))];
-    await bagikanKePeserta(token, fileId, emailList);
+    await bagikanKePeserta(token, fileId, emailList, judulSesi);
   }
 
   const url = `https://docs.google.com/document/d/${fileId}/edit`;
