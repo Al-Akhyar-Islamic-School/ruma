@@ -27,45 +27,44 @@ apps/extension/ruma-meet.zip
 
 ---
 
-## 🛠️ Langkah Demi Langkah
+## 🛠️ Langkah Demi Langkah (Pilihan Metode)
 
-### Langkah 1: Unggah Ekstensi ke Chrome Web Store (Setelan Privat)
+### METODE UTAMA: Pemasangan Otomatis via Custom URL Server Sendiri (100% GRATIS / $0)
 
-1. Buka [Chrome Web Store Developer Dashboard](https://chrome.google.com/webstore/devconsole).
-2. Masuk menggunakan akun admin Google Workspace sekolah (misal: `admin@alakhyar.sch.id`).
-   *(Catatan: Google mengenakan biaya registrasi developer $5 sekali seumur hidup untuk organisasi sekolah).*
-3. Klik tombol **"Add new item"** (Tambah item baru) di pojok kanan atas.
-4. Unggah berkas ZIP:
-   `apps/extension/ruma-meet.zip`
-5. Isi data dasar aplikasi:
-   - **Name:** `ruma. Notulis Google Meet`
-   - **Summary:** `Asisten pencatat notulen rapat Google Meet otomatis Sekolah Islam Al Akhyar`
-   - **Category:** `Productivity` (Produktivitas)
-6. Masuk ke tab **"Privacy & Visibility"** (Privasi & Visibilitas):
-   - Gulir ke bagian **Visibility (Visibilitas)**.
-   - Pilih opsi: **"Private"** (Privat).
-   - Centang: **"Everyone in alakhyar.sch.id"** (Semua orang di domain alakhyar.sch.id).
-   - *(Penting: Jangan pilih Public agar ekstensi tidak dapat diakses masyarakat umum).*
-7. Klik tombol **"Submit for review"** / **"Publish item"**.
-8. Setelah terbit, salin **ID Ekstensi** (string 32 huruf unik di dashboard, misal: `abcdefghijklmnopqrstuvwxyz123456`).
+Metode ini **TIDAK MEMERLUKAN Chrome Web Store dan TIDAK ADA BIAYA $5 sama sekali**. Berkas ekstensi di-host langsung di server sekolah sendiri (`https://ruma.alakhyar.sch.id`).
+
+#### 1. Data Konfigurasi Ekstensi Sekolah:
+- **Extension ID:** `ajikealpdjmgndmjmnekmefngfibepph`
+- **URL Pembaruan (Update URL):** `https://ruma.alakhyar.sch.id/extension/update.xml`
+- **Berkas Biner (.crx):** `https://ruma.alakhyar.sch.id/extension/ruma-meet.crx`
+
+#### 2. Langkah Pengaturan di Google Admin Console:
+1. Buka [Google Workspace Admin Console](https://admin.google.com).
+2. Masuk ke menu:
+   👉 **Devices (Perangkat)** ➔ **Chrome** ➔ **Apps & extensions (Aplikasi & ekstensi)** ➔ **Users & browsers (Pengguna & browser)**.
+3. Di panel sebelah kiri, pilih Unit Organisasi (*Organizational Unit*), misal: **"Guru & Tenaga Kependidikan"** atau unit **"Al Akhyar"**.
+4. Klik ikon tombol kuning **`+`** di pojok kanan bawah ➔ pilih **"Add Chrome app or extension by ID"** (Tambahkan aplikasi atau ekstensi Chrome berdasarkan ID).
+5. Pilih opsi:
+   👉 **`From a custom URL`** *(Dari URL khusus)*.
+6. Masukkan data:
+   - **Extension ID:** `ajikealpdjmgndmjmnekmefngfibepph`
+   - **URL:** `https://ruma.alakhyar.sch.id/extension/update.xml`
+7. Klik **Save (Simpan)**.
+8. Pada tabel aplikasi, temukan baris `ajikealpdjmgndmjmnekmefngfibepph`, lalu ubah kolom **Installation policy** menjadi:
+   👉 **`Force install + pin to browser toolbar`** *(Pasang paksa + sematkan ke bilah peramban)*.
+9. Klik **Save (Simpan)** di pojok kanan atas. Selesai!
 
 ---
 
-### Langkah 2: Terapkan Kebijakan Force-Install di Google Admin Console
+### METODE ALTERNATIF: Melalui Chrome Web Store Privat ($5 Akun Developer)
 
-1. Buka [Google Workspace Admin Console](https://admin.google.com).
-2. Di menu navigasi sebelah kiri, buka:
-   👉 **Devices (Perangkat)** ➔ **Chrome** ➔ **Apps & extensions (Aplikasi & ekstensi)** ➔ **Users & browsers (Pengguna & browser)**.
-3. Di panel sebelah kiri, pilih Unit Organisasi (*Organizational Unit*) yang dituju:
-   - Pilih unit akar **"Yayasan Al Akhyar"** jika ingin berlaku untuk semua staf.
-   - Atau pilih unit khusus **"Guru & Tenaga Kependidikan"**.
-4. Di pojok kanan bawah, klik ikon tombol kuning **`+`** (Tambah) ➔ pilih **"Add from Chrome Web Store"** (Tambahkan dari Chrome Web Store).
-5. Cari **ruma. Notulis Google Meet** atau tempelkan **ID Ekstensi** dari Langkah 1.
-6. Klik tombol **Select (Pilih)**.
-7. Di tabel aplikasi, temukan baris `ruma. Notulis Google Meet`, lalu ubah kolom **Installation policy (Kebijakan pemasangan)** dari *"Allow install"* menjadi:
-   👉 **`Force install + pin to browser toolbar`** *(Pasang paksa + sematkan ke bilah peramban)*.
-8. Klik tombol **Save (Simpan)** di pojok kanan atas halaman.
+Jika yayasan ingin mendaftarkan akun pengembang resmi Google Chrome ($5 sekali seumur hidup untuk yayasan):
 
+1. Buka [Chrome Web Store Developer Dashboard](https://chrome.google.com/webstore/devconsole) menggunakan akun admin sekolah (`admin@alakhyar.sch.id`).
+2. Klik **"Add new item"** dan unggah berkas `apps/extension/ruma-meet.zip`.
+3. Di tab **"Privacy & Visibility"**, pilih **"Private"** ➔ Centang **"Everyone in alakhyar.sch.id"**.
+4. Klik **Publish item**. Salin **ID Ekstensi** yang muncul di dashboard.
+5. Buka Google Admin Console ➔ `Apps & extensions > Users & browsers` ➔ klik `+` ➔ `Add from Chrome Web Store` ➔ masukkan ID Ekstensi ➔ setel **`Force install + pin`** ➔ Simpan.
 ---
 
 ### Langkah 3: Verifikasi di Laptop Guru

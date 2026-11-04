@@ -1,7 +1,7 @@
 import type { KonfigurasiEkstensi } from "../types";
 
 export const DEFAULT_CONFIG: KonfigurasiEkstensi = {
-  rumaUrl: "http://localhost:5173",
+  rumaUrl: "https://ruma.alakhyar.sch.id",
   sertakanMic: true,
   kategoriDefault: "tanpa",
 };
@@ -24,29 +24,47 @@ export async function simpanKonfigurasi(baru: Partial<KonfigurasiEkstensi>): Pro
   await chrome.storage.sync.set(baru);
 }
 
+export type HasilAutentikasi = {
+  token: string;
+  activeUrl: string;
+};
+
 /**
  * Mengambil token autentikasi aktif.
  * Prioritas:
  * 1. Token eksplisit yang disimpan di opsi ekstensi.
  * 2. Cookie `ruma_session` dari domain rumaUrl.
+ * 3. Fallback: domain produksi ruma.alakhyar.sch.id dan localhost.
  */
-export async function ambilTokenAutentikasi(rumaUrl: string): Promise<string | null> {
+export async function ambilTokenAutentikasi(
+  rumaUrl: string
+): Promise<HasilAutentikasi | null> {
   const cfg = await muatKonfigurasi();
   if (cfg.authToken && cfg.authToken.trim()) {
-    return cfg.authToken.trim();
+    return { token: cfg.authToken.trim(), activeUrl: rumaUrl };
   }
 
-  try {
-    const urlObj = new URL(rumaUrl);
-    const cookie = await chrome.cookies.get({
-      url: urlObj.origin,
-      name: "ruma_session",
-    });
-    if (cookie?.value) {
-      return cookie.value;
+  const kandidatUrl = [
+    rumaUrl,
+    "https://ruma.alakhyar.sch.id",
+    "http://localhost:5173",
+  ];
+
+  const uniqueUrls = [...new Set(kandidatUrl.map((u) => u.trim().replace(/\/+$/, "")))];
+
+  for (const targetUrl of uniqueUrls) {
+    try {
+      const urlObj = new URL(targetUrl);
+      const cookie = await chrome.cookies.get({
+        url: urlObj.origin,
+        name: "ruma_session",
+      });
+      if (cookie?.value) {
+        return { token: cookie.value, activeUrl: targetUrl };
+      }
+    } catch {
+      // Coba kandidat berikutnya
     }
-  } catch (err) {
-    console.warn("Gagal membaca cookie ruma_session:", err);
   }
 
   return null;

@@ -35,6 +35,11 @@ async function pack() {
       if (fs.existsSync(finalCrx)) fs.unlinkSync(finalCrx);
       fs.renameSync(crxTarget, finalCrx);
       console.log(`✅ Berkas CRX berhasil dibuat: ${finalCrx}`);
+
+      const webPublicExt = resolve(__dirname, "../web/public/extension");
+      fs.mkdirSync(webPublicExt, { recursive: true });
+      fs.copyFileSync(finalCrx, resolve(webPublicExt, "ruma-meet.crx"));
+      console.log(`✅ Berkas CRX disalin ke web/public/extension untuk Google Admin direct install.`);
     }
   }
 

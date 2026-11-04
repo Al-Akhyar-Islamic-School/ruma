@@ -49,16 +49,15 @@ async function periksaAutentikasi(rumaUrl: string) {
   authActionsEl.style.display = "none";
 
   try {
-    const token = await ambilTokenAutentikasi(rumaUrl);
-    if (!token) {
+    const authData = await ambilTokenAutentikasi(rumaUrl);
+    if (!authData) {
       statusAuthEl.textContent = "Belum Terhubung ke ruma.";
       authActionsEl.style.display = "flex";
       return;
     }
 
-    const api = new RumaApiClient(rumaUrl, token);
+    const api = new RumaApiClient(authData.activeUrl, authData.token);
     const me = await api.getMe();
-
     statusAuthEl.className = "popup-status-badge status-connected";
     statusAuthEl.innerHTML = `
       <span>Terhubung: <strong>${me.name}</strong></span>

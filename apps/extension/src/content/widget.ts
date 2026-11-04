@@ -83,9 +83,17 @@ export class RumaMeetWidget {
     let bodyHtml = "";
 
     if (galat) {
+      const isLoginError = galat.toLowerCase().includes("masuk") || galat.toLowerCase().includes("login");
       bodyHtml = `
         <div class="ruma-alert-error">${galat}</div>
-        <button id="btn-kembali" class="ruma-btn-secondary">Kembali</button>
+        <div class="ruma-btn-row">
+          ${
+            isLoginError
+              ? `<a href="https://ruma.alakhyar.sch.id" target="_blank" class="ruma-btn-primary" style="text-decoration:none; text-align:center;">Buka ruma. ↗</a>`
+              : ""
+          }
+          <button id="btn-kembali" class="ruma-btn-secondary">Kembali</button>
+        </div>
       `;
     } else if (status === "siap" || status === "meminta_izin") {
       bodyHtml = `

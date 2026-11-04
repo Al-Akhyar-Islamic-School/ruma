@@ -68,18 +68,18 @@ chrome.runtime.onMessage.addListener((pesan: PesanEkstensi, sender, kirimBalasan
     void (async () => {
       try {
         const cfg = await muatKonfigurasi();
-        const authToken = await ambilTokenAutentikasi(cfg.rumaUrl);
-        if (!authToken) {
+        const authData = await ambilTokenAutentikasi(cfg.rumaUrl);
+        if (!authData) {
           kirimBalasan({
             ok: false,
-            error: "Belum masuk ke ruma. Buka web ruma. atau simpan token sesi di popup ekstensi.",
+            error: "Belum masuk ke ruma. Buka https://ruma.alakhyar.sch.id dan login dengan Google, lalu coba lagi.",
           });
           return;
         }
         kirimBalasan({
           ok: true,
-          rumaUrl: cfg.rumaUrl,
-          authToken,
+          rumaUrl: authData.activeUrl,
+          authToken: authData.token,
           kategoriDefault: cfg.kategoriDefault,
           sertakanMic: cfg.sertakanMic,
         });
