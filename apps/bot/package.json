@@ -1,0 +1,20 @@
+{
+  "name": "@kalam/bot",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Headless Meeting Participant Bot untuk Google Meet (seperti tl;dv / Fathom / Otter)",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "join": "tsx src/cli.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "puppeteer": "^24.40.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}

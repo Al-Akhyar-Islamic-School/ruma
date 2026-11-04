@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <title>ruma. Notulis Meet</title>
+  <link rel="stylesheet" href="./popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <div class="popup-header">
+      <div class="popup-brand">ruma<span>.</span> Notulis Meet</div>
+      <div class="popup-version">v1.0</div>
+    </div>
+
+    <div class="popup-body">
+      <!-- Status Autentikasi -->
+      <div class="popup-card">
+        <div class="popup-card-title">Status Akun</div>
+        <div id="status-auth" class="popup-status-badge status-disconnected">
+          Memeriksa status login...
+        </div>
+        <div id="auth-actions" style="display: none; flex-direction: column; gap: 8px;">
+          <button id="btn-login" class="btn btn-secondary">
+            Buka ruma. untuk Masuk
+          </button>
+        </div>
+      </div>
+
+      <!-- Konfigurasi Server -->
+      <div class="popup-card">
+        <div class="popup-card-title">Pengaturan Server</div>
+        <div class="popup-field">
+          <label class="popup-label" for="inp-url">URL Server ruma.</label>
+          <input id="inp-url" class="popup-input" type="url" placeholder="https://ruma.al-akhyar.sch.id" />
+        </div>
+        <div class="popup-field">
+          <label class="popup-label" for="inp-token">Token Sesi (Opsional)</label>
+          <input id="inp-token" class="popup-input" type="password" placeholder="Otomatis dari cookie browser..." />
+        </div>
+        <label class="popup-row">
+          <input id="chk-mic" type="checkbox" />
+          <span>Sertakan mikrofon saya saat merekam</span>
+        </label>
+        <button id="btn-simpan" class="btn btn-primary">Simpan Pengaturan</button>
+      </div>
+
+      <!-- Status Rekaman Aktif -->
+      <div id="card-rekaman" class="popup-card" style="display: none;">
+        <div class="popup-card-title">Rekaman Berjalan</div>
+        <div id="rekam-judul" style="font-weight: 600; font-size: 13px;">-</div>
+        <div id="rekam-timer" style="font-family: monospace; font-size: 18px; font-weight: 700; color: #153e35;">
+          00:00
+        </div>
+        <button id="btn-popup-selesai" class="btn btn-primary" style="background: #dc2626;">
+          ⏹ Selesai & Buat Notulen
+        </button>
+      </div>
+    </div>
+
+    <div class="popup-footer">
+      <span>Sekolah Islam Al Akhyar</span>
+      <a id="link-dashboard" href="#" target="_blank">Buka ruma. ↗</a>
+    </div>
+  </div>
+
+  <script type="module" src="./popup.ts"></script>
+</body>
+</html>

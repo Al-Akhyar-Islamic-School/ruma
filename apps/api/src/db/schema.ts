@@ -86,6 +86,10 @@ export type SesiMetadata = {
   materi?: string;
   /** Detik sejak awal rekaman yang ditandai perekam sebagai momen penting (diisi saat finish). */
   penanda?: number[];
+  /** Sumber rekaman: misal "google_meet_extension", "web", "android". */
+  sumber?: string;
+  googleMeetCode?: string;
+  googleMeetUrl?: string;
 };
 
 /** Seri Rapat (rapat berkala / rekursif, misal rapat mingguan) */

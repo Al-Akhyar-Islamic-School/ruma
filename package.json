@@ -5,7 +5,13 @@
   "scripts": {
     "dev:api": "pnpm --filter @kalam/api dev",
     "dev:web": "pnpm --filter @kalam/web dev",
-    "dev": "pnpm run dev:api & pnpm run dev:web",
+    "dev:extension": "pnpm --filter @kalam/extension dev",
+    "build:extension": "pnpm --filter @kalam/extension build",
+    "pack:extension": "pnpm --filter @kalam/extension run package",
+    "bot:join": "pnpm --filter @kalam/bot join",
+    "desktop:build": "pnpm --filter @kalam/desktop tauri build --debug",
+    "desktop:open": "open apps/desktop/src-tauri/target/debug/bundle/macos/ruma..app",
+    "desktop:dev": "pnpm --filter @kalam/desktop tauri dev",
     "typecheck": "pnpm -r typecheck"
   }
 }

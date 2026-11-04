@@ -1,0 +1,20 @@
+{
+  "name": "@kalam/extension",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Chrome Extension ruma. untuk rekaman dan notulen cerdas Google Meet",
+  "scripts": {
+    "build": "tsx build.ts",
+    "package": "tsx pack.ts",
+    "dev": "tsx build.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.308",
+    "@types/node": "^26.6.6",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.5"
+  }
+}

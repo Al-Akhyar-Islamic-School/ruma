@@ -38,7 +38,9 @@ export async function purgeExpiredSessions() {
 export type AuthEnv = { Variables: { user: User } };
 
 export const requireAuth = createMiddleware<AuthEnv>(async (c, next) => {
-  const token = getCookie(c, SESSION_COOKIE);
+  const authHeader = c.req.header("authorization");
+  const bearer = authHeader?.replace(/^Bearer\s+/i, "");
+  const token = bearer || getCookie(c, SESSION_COOKIE);
   if (!token) return c.json({ error: "unauthenticated" }, 401);
   const [row] = await db
     .select({ user: users })

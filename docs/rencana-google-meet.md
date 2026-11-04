@@ -1,7 +1,7 @@
 # Rencana: Integrasi ruma. dengan Google Meet
 
-**Status:** rencana arsitektur (iterasi bertahap).  
-**Tujuan:** pengguna dapat menyusun notulen rapat daring Google Meet secara otomatis ke ruma., baik melalui rekaman audio langsung maupun transkrip resmi Meet.
+**Status:** Selesai dikerjakan (Tahap 1: Ekstensi Chrome Manifest V3 `apps/extension` siap digunakan; build `pnpm build:extension` menghasilkan bundel siap pasang di Google Chrome).  
+**Tujuan:** Pengguna dapat menyusun notulen rapat daring Google Meet secara otomatis ke ruma., menyatu langsung di dalam panggilan Google Meet (`meet.google.com`) dengan rekaman suara peserta rapat + suara mikrofon pengguna sendiri.
 
 ---
 
@@ -38,13 +38,58 @@ Kita akan mengeksekusi secara bertahap dari yang paling aman & stabil:
 
 ---
 
-## 3. Checklist Todo Tahap 1 & 2
+## 3. Implementasi Ekstensi Chrome ruma. (`apps/extension`)
 
-### Tahap 1 (Audio Tab Meet)
-- [ ] Buat hook `features/rekam/use-tab-audio.ts` (dukungan `getDisplayMedia`).
-- [ ] Tambahkan toggle pilihan input di form setup rekaman (`/rekam/baru`): *Mikrofon Ponsel/Ruangan* vs *Audio Panggilan (Google Meet / Tab)*.
-- [ ] Penggabungan stream mikrofon pengguna + audio rapat jika pengguna juga berbicara di laptop.
+### A. Arsitektur Komponen (Manifest V3)
 
-### Tahap 2 (Impor Transkrip Meet)
-- [ ] Parser berkas transkrip bawaan Google Meet (format VTT atau Docs).
-- [ ] Endpoint `POST /sesi/impor-transkrip` (menerima teks transkrip langsung, bypass tahap Whisper, langsung masuk ke tahap analisis Gemini).
+1. **Content Script (`src/content/`)**:
+   - Berjalan otomatis di setiap halaman `https://meet.google.com/*`.
+   - Mendeteksi kode rapat (`abc-defg-hij`) dan judul agenda/kalender dari dokumen Google Meet.
+   - Memasang floating control widget **ruma. Notulis** berbasis Shadow DOM (terisolasi tanpa konflik gaya CSS dari Google Meet).
+   - Fitur widget:
+     - Tombol rekam `[ 🔴 Rekam Rapat ke ruma. ]`
+     - Pengatur judul rapat & opsi mikrofon pengguna (audio ganda)
+     - Timer rapat live & visualisator gelombang audio (VU meter)
+     - Tombol `[ ⏸ Jeda / ▶ Lanjut ]` dan `[ ⏹ Selesai & Buat Notulen ]`
+     - Tombol minimize `—` untuk mengecilkan widget menjadi badge mengambang.
+
+2. **Offscreen Document (`src/offscreen/`)**:
+   - Dibuat otomatis saat perekaman dimulai untuk menjalankan Web Audio API & MediaRecorder.
+   - Menangkap stream audio tab Meet menggunakan `chrome.tabCapture` via `streamId`.
+   - Menangkap stream mikrofon lokal pengguna (`navigator.mediaDevices.getUserMedia`).
+   - Mencampur (*audio mixing*) kedua stream ke dalam satu audio channel berstandar Whisper (Opus 32 kbps).
+   - **Anti-bisu:** Meneruskan tab audio ke speaker (`audioCtx.destination`) agar pengguna tetap mendengar lawan bicara dengan jelas.
+   - Mengirimkan potongan audio (chunks) tiap 30 detik ke API ruma. (`PUT /sesi/:uuid/chunks/:seq`) untuk keandalan zero-loss.
+
+3. **Background Service Worker (`src/background/`)**:
+   - Menangani komunikasi pesan antar tab, offscreen, dan popup.
+   - Mengambil token autentikasi sesi ruma. otomatis dari cookie browser atau konfigurasi.
+   - Menampilkan badge status di ikon ekstensi (`REC`, `PAUS`, `UP`).
+   - Mengamankan rekaman bila tab Google Meet ditutup pengguna secara tidak sengaja.
+
+4. **Popup Ekstensi (`src/popup/`)**:
+   - Memeriksa status login dan identitas akun ruma.
+   - Mengatur URL server ruma. (default `http://localhost:5173` atau domain produksi VPS sekolah).
+   - Menampilkan status rekaman yang sedang berjalan secara langsung.
+
+---
+
+## 4. Panduan Memasang Ekstensi di Google Chrome
+
+1. **Build Ekstensi:**
+   ```bash
+   pnpm build:extension
+   ```
+   Artefak siap pasang akan tersedia di folder `apps/extension/dist`.
+
+2. **Muat di Google Chrome:**
+   - Buka browser Chrome dan tuju: `chrome://extensions`
+   - Aktifkan toggle **"Developer mode"** di pojok kanan atas.
+   - Klik tombol **"Load unpacked"** di pojok kiri atas.
+   - Pilih folder: `<lokasi_projek>/apps/extension/dist`.
+
+3. **Mulai Rapat Google Meet:**
+   - Masuk ke salah satu rapat di `https://meet.google.com/`.
+   - Widget hijau elegan **ruma.** akan muncul di sudut kanan atas layar Meet.
+   - Klik **"🔴 Rekam Rapat ke ruma."** untuk mulai.
+   - Setelah selesai, klik **"⏹ Selesai & Buat Notulen"**; halaman notulen ruma. akan langsung terbuka otomatis di tab baru dan diproses AI!

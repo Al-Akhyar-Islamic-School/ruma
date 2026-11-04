@@ -19,6 +19,7 @@ export const app = new Hono()
       if (!asal) return false;
       const normal = asal.replace(/\/+$/, "");
       if (normal === env.APP_URL.replace(/\/+$/, "")) return true;
+      if (asal.startsWith("chrome-extension://")) return true;
       return env.CORS_ORIGINS.includes(normal);
     };
 
@@ -33,7 +34,10 @@ export const app = new Hono()
       const origin = c.req.header("origin");
       if (origin) {
         const normal = origin.replace(/\/+$/, "");
-        const sah = normal === env.APP_URL.replace(/\/+$/, "") || env.CORS_ORIGINS.includes(normal);
+        const sah =
+          normal === env.APP_URL.replace(/\/+$/, "") ||
+          origin.startsWith("chrome-extension://") ||
+          env.CORS_ORIGINS.includes(normal);
         if (!sah) return c.json({ error: "bad_origin" }, 403);
       }
     }

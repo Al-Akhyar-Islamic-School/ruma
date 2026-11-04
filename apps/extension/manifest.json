@@ -1,0 +1,47 @@
+{
+  "manifest_version": 3,
+  "name": "ruma. Notulis Google Meet",
+  "version": "1.0.0",
+  "description": "Asisten cerdas pencatat notulen rapat Google Meet otomatis dari Sekolah Islam Al Akhyar",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "action": {
+    "default_popup": "src/popup/index.html",
+    "default_title": "ruma. Notulis Google Meet",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://meet.google.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "permissions": [
+    "tabCapture",
+    "offscreen",
+    "storage",
+    "cookies",
+    "tabs",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "https://meet.google.com/*",
+    "http://localhost:5173/*",
+    "http://localhost:3000/*",
+    "http://127.0.0.1:3000/*",
+    "https://*.alakhyar.sch.id/*",
+    "*://*/*"
+  ]
+}

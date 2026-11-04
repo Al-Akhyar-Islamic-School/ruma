@@ -51,14 +51,14 @@ Dokumen ini adalah ringkasan status implementasi saat ini dan peta jalan pengemb
 - [x] Alur 2 arah: ruma. menarik daftar agenda hari ini (`GET /agenda`), mengisi otomatis judul & peserta.
 - [x] Kolom `simgtk_agenda_id` di tabel `ruma_sesi`.
 - [x] Callback dua arah: saat notulen disetujui, ruma. mengirim balik `ruma_sesi_url` dan `google_docs_url` ke SIMGTK agar bisa dibuka langsung dari SIM-GTK.
-- [ ] Perekam audio tab Google Meet di peramban desktop (`getDisplayMedia`).
-- [ ] Opsi impor berkas transkrip otomatis Google Meet dari Google Drive langsung ke ruma.
+- [x] **Ekstensi Chrome ruma. untuk Google Meet:** Plugin Chrome Manifest V3 (`apps/extension`) yang menyatu di dalam panggilan Google Meet (`meet.google.com`), merekam audio rapat tab (`getDisplayMedia`) + mikrofon lokal, streaming potongan 30 detik ke API ruma., floating control widget di layar Meet, pembuatan notulen otomatis, dan panduan pemasangan otomatis via Google Workspace Admin Console (`docs/panduan-admin-google-workspace-force-install.md` & `docs/panduan-integrasi-extension-desktop-dan-bot.md`).
+- [x] **Bot Partisipan Rapat Otomatis (`apps/bot`):** Layanan bot otomatis seperti tl;dv / Fathom / Otter yang bergabung langsung ke URL Google Meet sebagai peserta `"ruma. Notulis (Al Akhyar)"`, merekam suara, mengekstrak Closed Captions & nama pembicara, dan otomatis keluar saat rapat selesai.
 
 ---
 
 ## 🔵 Fase Lanjutan: Aplikasi Desktop & AI Lokal Mandiri (`docs/rencana-desktop-dan-local-llm.md`)
 
-- [ ] **Aplikasi Desktop Mac & Windows:** Dibangun dengan Tauri v2 (ringan, <15 MB).
-- [ ] **Local Whisper:** Menggunakan `whisper.cpp` model `whisper-large-v3-turbo` (GGUF) dengan akselerasi GPU (Apple Metal di Mac, CUDA/DirectML di Windows).
-- [ ] **Local Text LLM:** Menggunakan **Qwen 2.5 7B Instruct** (atau 3B untuk laptop hemat daya) via Ollama / llama.cpp lokal.
-- [ ] 100% pemrosesan di komputer pengguna tanpa internet, tanpa biaya API, dan data tidak keluar dari perangkat.
+- [x] **Aplikasi Desktop Mac & Windows (Tauri v2):** Dibangun dengan Tauri v2 (`apps/desktop`), backend native Rust (CPAL audio capture), penyimpanan audio WAV default di folder Dokumen (`C:\Users\...\Documents\ruma-notulen\` atau `~/Documents/ruma-notulen/`) yang dapat diubah bebas oleh pengguna.
+- [x] **Pilihan Download Model Whisper:** Pengelola unduhan model Whisper GGUF langsung dari Hugging Face (`whisper-large-v3-turbo` 1.6GB, `medium` 1.5GB, `small` 460MB, `base` 140MB).
+- [x] **Pilihan Download Model Text LLM:** Pengelola model Ollama lokal (`qwen2.5:7b` 4.7GB, `qwen2.5:3b` 2.0GB, `llama3.1:8b` 4.9GB) dengan tombol pull otomatis.
+- [x] 100% pemrosesan di komputer pengguna tanpa internet, tanpa biaya API, dan data tidak keluar dari perangkat.

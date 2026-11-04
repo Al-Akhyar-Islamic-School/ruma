@@ -1,0 +1,296 @@
+/* ruma. Google Meet Widget Styles (Scoped inside Shadow DOM) */
+
+:host {
+  all: initial;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #1e293b;
+  position: fixed;
+  top: 72px;
+  right: 16px;
+  z-index: 999999;
+  user-select: none;
+}
+
+.ruma-widget {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+  width: 320px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.ruma-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: #153e35;
+  color: #ffffff;
+}
+
+.ruma-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ruma-logo {
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+}
+
+.ruma-logo span {
+  color: #a3e635;
+}
+
+.ruma-tag {
+  font-size: 10px;
+  background: rgba(255, 255, 255, 0.15);
+  padding: 2px 6px;
+  border-radius: 9999px;
+  color: #d1fae5;
+}
+
+.ruma-actions-top {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ruma-btn-icon {
+  background: transparent;
+  border: none;
+  color: #cbd5e1;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.ruma-btn-icon:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+.ruma-body {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ruma-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ruma-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.ruma-input {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 13px;
+  outline: none;
+  color: #0f172a;
+  background: #f8fafc;
+  transition: border-color 0.15s ease;
+}
+
+.ruma-input:focus {
+  border-color: #153e35;
+  background: #ffffff;
+}
+
+.ruma-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  color: #334155;
+}
+
+.ruma-checkbox-row input {
+  cursor: pointer;
+  accent-color: #153e35;
+}
+
+/* Status Merekam */
+.ruma-recording-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 12px;
+  gap: 8px;
+}
+
+.ruma-timer-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ruma-dot-rec {
+  width: 10px;
+  height: 10px;
+  background: #dc2626;
+  border-radius: 50%;
+  animation: ruma-pulse 1.2s infinite ease-in-out;
+}
+
+.ruma-dot-paused {
+  background: #f59e0b;
+  animation: none;
+}
+
+@keyframes ruma-pulse {
+  0% { transform: scale(0.9); opacity: 0.6; }
+  50% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(0.9); opacity: 0.6; }
+}
+
+.ruma-timer {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 26px;
+  font-weight: 700;
+  color: #153e35;
+  letter-spacing: -0.03em;
+}
+
+/* Waveform Bars */
+.ruma-meter-bars {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 20px;
+  width: 100%;
+}
+
+.ruma-bar {
+  width: 4px;
+  height: 4px;
+  background: #86efac;
+  border-radius: 2px;
+  transition: height 0.08s ease;
+}
+
+.ruma-info-text {
+  font-size: 11px;
+  color: #166534;
+}
+
+/* Tombol Utama */
+.ruma-btn-primary {
+  background: #153e35;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background 0.15s ease;
+  width: 100%;
+}
+
+.ruma-btn-primary:hover {
+  background: #1e5a4d;
+}
+
+.ruma-btn-primary:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+}
+
+.ruma-btn-danger {
+  background: #dc2626;
+  color: #ffffff;
+}
+
+.ruma-btn-danger:hover {
+  background: #b91c1c;
+}
+
+.ruma-btn-secondary {
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.ruma-btn-secondary:hover {
+  background: #e2e8f0;
+}
+
+.ruma-btn-row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.ruma-btn-row .ruma-btn-primary,
+.ruma-btn-row .ruma-btn-secondary {
+  flex: 1;
+}
+
+/* Alert Galat */
+.ruma-alert-error {
+  padding: 10px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  color: #991b1b;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+/* Badge Minimized */
+.ruma-minimized {
+  background: #153e35;
+  color: #ffffff;
+  border-radius: 9999px;
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  font-weight: 600;
+  font-size: 12px;
+  transition: transform 0.15s ease;
+}
+
+.ruma-minimized:hover {
+  transform: scale(1.04);
+}

@@ -17,7 +17,11 @@ export const sesiSpecShape = {
       kelas: z.string().trim().max(100).optional(),
       mapel: z.string().trim().max(100).optional(),
       materi: z.string().trim().max(255).optional(),
+      sumber: z.string().trim().max(50).optional(),
+      googleMeetCode: z.string().trim().max(100).optional(),
+      googleMeetUrl: z.string().trim().max(500).optional(),
     })
+    .passthrough()
     .default({}),
 };
 
