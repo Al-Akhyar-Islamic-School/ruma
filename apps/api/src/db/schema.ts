@@ -211,9 +211,11 @@ export const dokumen = mysqlTable("ruma_dokumen", {
   statusVerifikasi: mysqlEnum("status_verifikasi", ["draf", "disetujui"]).notNull().default("draf"),
   disetujuiOleh: ref("disetujui_oleh").references(() => users.id),
   disetujuiPada: timestamp("disetujui_pada"),
-  // Ekspor ke Google Docs (OAuth Drive pengguna)
+  // Ekspor ke Google Docs & Drive (OAuth Drive pengguna)
   googleDocsFileId: varchar("google_docs_file_id", { length: 255 }),
   googleDocsUrl: varchar("google_docs_url", { length: 500 }),
+  googleDriveAudioFileId: varchar("google_drive_audio_file_id", { length: 255 }),
+  googleDriveAudioUrl: varchar("google_drive_audio_url", { length: 500 }),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
 });
