@@ -136,12 +136,16 @@ export async function tahapTranskripsi(s: Sesi) {
       .where(eq(sesi.id, s.id));
   });
   await rm(dir, { recursive: true, force: true });
-  // Pada R2: bersihkan chunk mentah yang sudah digantikan oleh playback.mp3 untuk hemat ruang
-  if (chunksTersimpan.length > 0 && audioStorage.isR2) {
-    for (const c of chunksTersimpan) {
-      await audioStorage.delete(c.key).catch(() => undefined);
-    }
+  // Bersihkan semua chunk mentah (.part) yang sudah digabungkan menjadi playback.mp3 agar R2 bersih & hemat ruang
+  const chunksLama = await db
+    .select({ key: audioChunks.storageKey })
+    .from(audioChunks)
+    .where(eq(audioChunks.sesiId, s.id));
+
+  for (const c of chunksLama) {
+    await audioStorage.delete(c.key).catch(() => undefined);
   }
+  await db.delete(audioChunks).where(eq(audioChunks.sesiId, s.id)).catch(() => undefined);
 }
 
 const TANGGAL_ISO = /^\d{4}-\d{2}-\d{2}$/;

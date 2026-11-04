@@ -6,6 +6,7 @@ import { labelKategori, useKategori } from "@/lib/kategori";
 import { SetujuiDokumen } from "./setujui-dokumen";
 import { StatusBadge } from "./status-badge";
 import { TombolGoogleDocs } from "./tombol-google-docs";
+import { TombolHapusSesi } from "./dialog-hapus-sesi";
 import type { DetailSesi } from "./queries";
 
 /** Kepala halaman: kembali, judul, status, meta, dan aksi perekam (Undang, Setujui dokumen). */
@@ -62,6 +63,13 @@ export function KepalaSesi({
           </Button>
           {bisaSetujui && <SetujuiDokumen uuid={sesi.uuid} />}
           {sesi.tipeSesi === "rapat" && statusDokumen === "disetujui" && <TombolGoogleDocs uuid={sesi.uuid} />}
+          <TombolHapusSesi
+            uuid={sesi.uuid}
+            judul={sesi.judul}
+            status={sesi.status}
+            keBeranda={true}
+            varian="outline"
+          />
         </div>
       )}
     </header>

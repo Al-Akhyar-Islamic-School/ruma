@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { formatDurasi, formatWaktu, STATUS_SESI, type StatusSesi } from "@/lib/format";
 import { labelKategori, useKategori } from "@/lib/kategori";
-
+import { TombolHapusSesi } from "@/features/sesi/dialog-hapus-sesi";
 export type SesiRingkas = {
   uuid: string;
   tipeSesi: "rapat" | "supervisi_kelas";
@@ -39,7 +39,17 @@ export function SesiCard({ s }: { s: SesiRingkas }) {
         <div className="min-w-0 flex-1 space-y-1">
           <div className="flex items-start justify-between gap-2">
             <p className="line-clamp-2 font-semibold leading-snug">{s.judul}</p>
-            <StatusBadge status={s.status} label={status.label} tone={status.tone} />
+            <div className="flex items-center gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+              <StatusBadge status={s.status} label={status.label} tone={status.tone} />
+              {!s.perekam && (
+                <TombolHapusSesi
+                  uuid={s.uuid}
+                  judul={s.judul}
+                  status={s.status}
+                  varian="ghost"
+                />
+              )}
+            </div>
           </div>
           {sub && <p className="truncate text-sm text-muted-foreground">{sub}</p>}
           <p className="flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">

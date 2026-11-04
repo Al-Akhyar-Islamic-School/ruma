@@ -6,7 +6,7 @@ import { z } from "zod";
 import { requireAuth, type AuthEnv } from "../auth/session.js";
 import { diundang, findOwn, findReadable } from "../akses.js";
 import { db } from "../db/index.js";
-import { audioChunks, sesi, users } from "../db/schema.js";
+import { audioChunks, permintaanSesi, sesi, users } from "../db/schema.js";
 import { kategoriBolehDipilih } from "../kategori.js";
 import { bisaBuatSesiLangsung } from "../permissions.js";
 import { audioMime, requireSupervisiMeta, sesiSpecShape } from "../sesi-spec.js";
@@ -209,6 +209,44 @@ export const sesiRoutes = new Hono<AuthEnv>()
       .where(and(eq(sesi.id, s.id), eq(sesi.status, "merekam")));
     if (res.affectedRows === 0) return c.json({ error: "sesi_sudah_ditutup" }, 409);
     return c.json({ uuid, status: "mentranskrip" });
+  })
+  .delete("/:uuid", zValidator("param", uuidParam), async (c) => {
+    const { uuid } = c.req.valid("param");
+    const [s] = await db.select().from(sesi).where(eq(sesi.uuid, uuid)).limit(1);
+    if (!s) return c.json({ error: "not_found" }, 404);
+
+    const isOwner = s.userId === c.var.user.id;
+    const isSuperadmin = c.var.user.role === "superadmin";
+    if (!isOwner && !isSuperadmin) {
+      return c.json({ error: "forbidden" }, 403);
+    }
+
+    // 1. Ambil semua chunks untuk dibersihkan dari storage / Cloudflare R2
+    const chunks = await db
+      .select({ storageKey: audioChunks.storageKey })
+      .from(audioChunks)
+      .where(eq(audioChunks.sesiId, s.id));
+
+    for (const chunk of chunks) {
+      await audioStorage.delete(chunk.storageKey).catch(() => undefined);
+    }
+
+    // 2. Hapus berkas audio gabungan di Cloudflare R2 jika ada
+    if (s.audioPath) {
+      await audioStorage.delete(s.audioPath).catch(() => undefined);
+    }
+    await audioStorage.deletePrefix(s.uuid).catch(() => undefined);
+
+    // 3. Putuskan relasi permintaan_sesi jika ada
+    await db
+      .update(permintaanSesi)
+      .set({ sesiId: null })
+      .where(eq(permintaanSesi.sesiId, s.id));
+
+    // 4. Hapus sesi dari database (cascade menghapus audio_chunks, transkrip, dokumen, action_items, sesi_undangan)
+    await db.delete(sesi).where(eq(sesi.id, s.id));
+
+    return c.json({ ok: true, deleted: uuid });
   })
   .route("/", undanganRoutes)
   .route("/", hasilRoutes);
