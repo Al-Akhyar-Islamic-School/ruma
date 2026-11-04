@@ -1,8 +1,9 @@
 import { useEffect, useState, useRef } from "react";
-import { Mic, Square, RefreshCw, FolderCheck, AlertCircle, Folder, Cloud } from "lucide-react";
+import { Mic, Square, RefreshCw, FolderCheck, AlertCircle, Folder, FolderOpen, Cloud } from "lucide-react";
 import {
   listAudioDevices,
   getDefaultSaveDir,
+  pickFolder,
   detectGoogleDriveFolder,
   startRecording,
   stopRecording,
@@ -266,35 +267,67 @@ export function RecordingView({
             </button>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                flex: 1,
-                padding: "8px 12px",
-                borderRadius: "10px",
-                border: "1px solid #cbd5e1",
-                background: sedangMerekam ? "#f8fafc" : "#ffffff",
-              }}
-            >
-              <Folder size={16} color="#64748b" />
-              <input
-                type="text"
-                value={folderSimpan}
-                onChange={(e) => gantiFolder(e.target.value)}
-                disabled={sedangMerekam}
-                placeholder="C:/Users/Nama/Documents/ruma-notulen atau ~/Documents/ruma-notulen"
+            <div style={{ display: "flex", gap: "8px" }}>
+              <div
                 style={{
-                  border: "none",
-                  outline: "none",
-                  width: "100%",
-                  fontSize: "13px",
-                  color: "#0f172a",
-                  fontFamily: "monospace",
-                  background: "transparent",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  flex: 1,
+                  padding: "0 12px",
+                  height: "42px",
+                  borderRadius: "10px",
+                  border: "1px solid #cbd5e1",
+                  background: sedangMerekam ? "#f8fafc" : "#ffffff",
                 }}
-              />
+              >
+                <Folder size={16} color="#64748b" />
+                <input
+                  type="text"
+                  value={folderSimpan}
+                  onChange={(e) => gantiFolder(e.target.value)}
+                  disabled={sedangMerekam}
+                  placeholder="C:/Users/Nama/Documents/ruma-notulen atau ~/Documents/ruma-notulen"
+                  style={{
+                    border: "none",
+                    outline: "none",
+                    width: "100%",
+                    fontSize: "13px",
+                    color: "#0f172a",
+                    fontFamily: "monospace",
+                    background: "transparent",
+                    height: "100%",
+                    padding: "0",
+                  }}
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={async () => {
+                  const f = await pickFolder();
+                  if (f) gantiFolder(f);
+                }}
+                disabled={sedangMerekam}
+                style={{
+                  height: "42px",
+                  padding: "0 18px",
+                  borderRadius: "10px",
+                  background: "#153e35",
+                  color: "#ffffff",
+                  border: "none",
+                  fontWeight: "600",
+                  fontSize: "13px",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                <FolderOpen size={16} />
+                <span>Browse...</span>
+              </button>
             </div>
             {gdrivePath && (
               <button

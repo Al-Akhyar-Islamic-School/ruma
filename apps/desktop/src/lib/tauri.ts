@@ -45,10 +45,17 @@ export async function getDefaultSaveDir(): Promise<string> {
   return await invoke<string>("cmd_get_default_save_dir");
 }
 
+export async function pickFolder(): Promise<string | null> {
+  return await invoke<string | null>("cmd_pick_folder");
+}
+
+export async function pickAudioFile(): Promise<string | null> {
+  return await invoke<string | null>("cmd_pick_audio_file");
+}
+
 export async function detectGoogleDriveFolder(): Promise<string | null> {
   return await invoke<string | null>("cmd_detect_google_drive_folder");
 }
-
 export async function saveNotulenFile(params: {
   destDir: string;
   title: string;

@@ -12,6 +12,8 @@ import {
   Key,
   Mic,
   ExternalLink,
+  FolderOpen,
+  Save,
 } from "lucide-react";
 import {
   checkOllama,
@@ -22,6 +24,9 @@ import {
   generateNotulenGemini,
   generateNotulenCloudflare,
   transcribeCloudflareWhisper,
+  pickAudioFile,
+  getDefaultSaveDir,
+  saveNotulenFile,
   type OllamaModelItem,
   type WhisperModelInfo,
   type NotulenLokalResult,
@@ -252,9 +257,9 @@ export function AiView({
     }
   };
 
-  const salinMarkdown = () => {
-    if (!hasilNotulen) return;
-    const md = `
+  const buatMarkdown = () => {
+    if (!hasilNotulen) return "";
+    return `
 # Notulen Rapat: ${judulRapat}
 
 ## Ringkasan Eksekutif
@@ -271,10 +276,29 @@ ${hasilNotulen.keputusan.map((k) => `- ${k}`).join("\n")}
 |---|---|---|
 ${hasilNotulen.tindak_lanjut.map((t) => `| ${t.tugas} | ${t.pic || "-"} | ${t.tenggat || "-"} |`).join("\n")}
     `.trim();
+  };
 
+  const salinMarkdown = () => {
+    const md = buatMarkdown();
+    if (!md) return;
     void navigator.clipboard.writeText(md);
     setTersalin(true);
     setTimeout(() => setTersalin(false), 2000);
+  };
+
+  const handleSimpanNotulenKeDrive = async () => {
+    if (!hasilNotulen) return;
+    const dest = localStorage.getItem("ruma_save_dir") || (await getDefaultSaveDir());
+    try {
+      const p = await saveNotulenFile({
+        destDir: dest,
+        title: judulRapat,
+        contentMd: buatMarkdown(),
+      });
+      setSuksesMsg(`Notulen berhasil disimpan: ${p} ✨`);
+    } catch (err) {
+      setGalat(err instanceof Error ? err.message : String(err));
+    }
   };
 
   return (
@@ -617,13 +641,40 @@ ${hasilNotulen.tindak_lanjut.map((t) => `| ${t.tugas} | ${t.pic || "-"} | ${t.te
               <label style={{ fontSize: "11px", fontWeight: "600", color: "#475569", textTransform: "uppercase" }}>
                 Berkas Rekaman Audio WAV
               </label>
-              <input
-                type="text"
-                value={audioPath}
-                onChange={(e) => setAudioPath(e.target.value)}
-                placeholder="Path file WAV di hardisk..."
-                style={{ height: "42px", padding: "10px 14px", borderRadius: "10px", border: "1px solid #cbd5e1", fontSize: "12px", fontFamily: "monospace" }}
-              />
+              <div style={{ display: "flex", gap: "8px" }}>
+                <input
+                  type="text"
+                  value={audioPath}
+                  onChange={(e) => setAudioPath(e.target.value)}
+                  placeholder="Path file WAV di hardisk..."
+                  style={{ flex: 1, height: "42px", padding: "10px 14px", borderRadius: "10px", border: "1px solid #cbd5e1", fontSize: "12px", fontFamily: "monospace" }}
+                />
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const f = await pickAudioFile();
+                    if (f) setAudioPath(f);
+                  }}
+                  style={{
+                    height: "42px",
+                    padding: "0 16px",
+                    borderRadius: "10px",
+                    background: "#f1f5f9",
+                    color: "#1e293b",
+                    border: "1px solid #cbd5e1",
+                    fontWeight: "600",
+                    fontSize: "12px",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  <FolderOpen size={15} />
+                  <span>Browse...</span>
+                </button>
+              </div>
             </div>
             {cfAccountId && cfApiToken && (
               <button
@@ -720,24 +771,45 @@ ${hasilNotulen.tindak_lanjut.map((t) => `| ${t.tugas} | ${t.pic || "-"} | ${t.te
               Hasil Notulen Resmi Al Akhyar
             </span>
             {hasilNotulen && (
-              <button
-                onClick={salinMarkdown}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "4px",
-                  padding: "6px 12px",
-                  borderRadius: "6px",
-                  border: "1px solid #cbd5e1",
-                  background: "#f8fafc",
-                  fontSize: "12px",
-                  cursor: "pointer",
-                  fontWeight: "600",
-                }}
-              >
-                {tersalin ? <Check size={14} color="#166534" /> : <Copy size={14} />}
-                <span>{tersalin ? "Tersalin" : "Salin MD"}</span>
-              </button>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <button
+                  onClick={handleSimpanNotulenKeDrive}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    padding: "6px 12px",
+                    borderRadius: "6px",
+                    border: "1px solid #86efac",
+                    background: "#f0fdf4",
+                    fontSize: "12px",
+                    cursor: "pointer",
+                    fontWeight: "600",
+                    color: "#166534",
+                  }}
+                >
+                  <Save size={14} />
+                  <span>Simpan ke Drive</span>
+                </button>
+                <button
+                  onClick={salinMarkdown}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    padding: "6px 12px",
+                    borderRadius: "6px",
+                    border: "1px solid #cbd5e1",
+                    background: "#f8fafc",
+                    fontSize: "12px",
+                    cursor: "pointer",
+                    fontWeight: "600",
+                  }}
+                >
+                  {tersalin ? <Check size={14} color="#166534" /> : <Copy size={14} />}
+                  <span>{tersalin ? "Tersalin" : "Salin MD"}</span>
+                </button>
+              </div>
             )}
           </div>
 

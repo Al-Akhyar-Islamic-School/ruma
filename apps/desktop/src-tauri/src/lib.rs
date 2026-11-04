@@ -37,6 +37,24 @@ fn cmd_get_default_save_dir(app: AppHandle) -> String {
 }
 
 #[tauri::command]
+async fn cmd_pick_folder() -> Option<String> {
+    let handle = rfd::AsyncFileDialog::new()
+        .set_title("Pilih Folder Penyimpanan Rekaman")
+        .pick_folder()
+        .await;
+    handle.map(|h| h.path().to_string_lossy().to_string())
+}
+
+#[tauri::command]
+async fn cmd_pick_audio_file() -> Option<String> {
+    let handle = rfd::AsyncFileDialog::new()
+        .set_title("Pilih Berkas Rekaman Audio")
+        .add_filter("Berkas Audio (*.wav, *.mp3, *.m4a)", &["wav", "mp3", "m4a", "webm", "ogg"])
+        .pick_file()
+        .await;
+    handle.map(|h| h.path().to_string_lossy().to_string())
+}
+#[tauri::command]
 fn cmd_detect_google_drive_folder() -> Option<String> {
     #[cfg(target_os = "macos")]
     {
@@ -209,6 +227,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             cmd_list_devices,
             cmd_get_default_save_dir,
+            cmd_pick_folder,
+            cmd_pick_audio_file,
             cmd_detect_google_drive_folder,
             cmd_save_notulen_file,
             cmd_start_recording,
