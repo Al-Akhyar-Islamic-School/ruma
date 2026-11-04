@@ -1,5 +1,6 @@
 import { existsSync } from "node:fs";
 import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 import { asc, eq } from "drizzle-orm";
 import { analisis } from "./ai/analisis.js";
@@ -29,30 +30,57 @@ const MIN_KARAKTER_TRANSKRIP = 20;
  */
 export async function tahapTranskripsi(s: Sesi) {
   const mulai = Date.now();
-  const dir = audioStorage.localPath(`${s.uuid}/work`);
+  // Scratchpad lokal di OS tmpdir untuk proses pengolahan ffmpeg dan potongan Whisper
+  const dir = path.join(os.tmpdir(), "ruma-work", s.uuid);
   await mkdir(dir, { recursive: true });
 
   const playbackKey = `${s.uuid}/playback.mp3`;
-  const playback = audioStorage.localPath(playbackKey);
-  if (!existsSync(playback)) {
-    const chunks = await db
-      .select({ key: audioChunks.storageKey })
-      .from(audioChunks)
-      .where(eq(audioChunks.sesiId, s.id))
-      .orderBy(asc(audioChunks.seq));
-    if (chunks.length === 0) throw new GalatPermanen("tidak ada potongan audio");
+  const playbackLocal = path.join(dir, "playback.mp3");
+  let chunksTersimpan: { key: string }[] = [];
 
-    const raw = path.join(dir, "audio.raw");
-    await sambung(chunks.map((c) => audioStorage.localPath(c.key)), raw);
-    const tmp = path.join(dir, "playback.tmp.mp3");
-    await keMp3(raw, tmp);
-    await rename(tmp, playback); // rename atomik: playback.mp3 ada = transkode selesai
-    await rm(raw);
+  if (!existsSync(playbackLocal)) {
+    // Cek apakah playback.mp3 sudah pernah dibuat sebelumnya di storage
+    let sudahAda = false;
+    try {
+      const streamInfo = await audioStorage.getStream(playbackKey);
+      if (streamInfo) {
+        await audioStorage.downloadToFile(playbackKey, playbackLocal);
+        sudahAda = true;
+      }
+    } catch {
+      sudahAda = false;
+    }
+
+    if (!sudahAda) {
+      const chunks = await db
+        .select({ key: audioChunks.storageKey })
+        .from(audioChunks)
+        .where(eq(audioChunks.sesiId, s.id))
+        .orderBy(asc(audioChunks.seq));
+      if (chunks.length === 0) throw new GalatPermanen("tidak ada potongan audio");
+      chunksTersimpan = chunks;
+
+      const localChunks: string[] = [];
+      for (const c of chunks) {
+        const localC = await audioStorage.pastikanLokal(c.key, dir);
+        localChunks.push(localC);
+      }
+
+      const raw = path.join(dir, "audio.raw");
+      await sambung(localChunks, raw);
+      const tmp = path.join(dir, "playback.tmp.mp3");
+      await keMp3(raw, tmp);
+      await rename(tmp, playbackLocal); // rename atomik
+      await rm(raw).catch(() => undefined);
+
+      // Unggah playback.mp3 ke storage (R2 / Disk)
+      await audioStorage.uploadFromFile(playbackLocal, playbackKey, "audio/mpeg");
+    }
   }
 
   // Bersihkan potongan lama, lalu potong ulang tanpa transkode di titik hening (kalimat tidak terpotong).
   await Promise.all((await daftarBagianLama(dir)).map((f) => rm(f)));
-  const bagian = await potongDiHening(playback, dir, env.WHISPER_SEGMENT_DETIK);
+  const bagian = await potongDiHening(playbackLocal, dir, env.WHISPER_SEGMENT_DETIK);
   await db.update(sesi).set({ progresSelesai: 0, progresTotal: bagian.length }).where(eq(sesi.id, s.id));
 
   // Garis waktu: durasi nyata tiap bagian (bukan asumsi N detik) supaya penanda waktu tidak bergeser.
@@ -108,6 +136,12 @@ export async function tahapTranskripsi(s: Sesi) {
       .where(eq(sesi.id, s.id));
   });
   await rm(dir, { recursive: true, force: true });
+  // Pada R2: bersihkan chunk mentah yang sudah digantikan oleh playback.mp3 untuk hemat ruang
+  if (chunksTersimpan.length > 0 && audioStorage.isR2) {
+    for (const c of chunksTersimpan) {
+      await audioStorage.delete(c.key).catch(() => undefined);
+    }
+  }
 }
 
 const TANGGAL_ISO = /^\d{4}-\d{2}-\d{2}$/;
