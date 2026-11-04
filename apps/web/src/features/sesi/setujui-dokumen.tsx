@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CircleCheckIcon, CloudIcon, Loader2Icon } from "lucide-react";
+import { CircleCheckIcon, CloudIcon, Loader2Icon, MusicIcon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,7 @@ export function SetujuiDokumen({ uuid }: { uuid: string }) {
   const [buka, setBuka] = useState(false);
   // Default switch aktif jika akun pengguna sudah menyambungkan Drive
   const [eksporDrive, setEksporDrive] = useState(me.driveTersambung);
+  const [simpanAudioDrive, setSimpanAudioDrive] = useState(true);
   const qc = useQueryClient();
   const dokumenKey = ["sesi", uuid, "dokumen"];
   const docsStatusKey = ["sesi", uuid, "google-docs-status"];
@@ -36,14 +37,17 @@ export function SetujuiDokumen({ uuid }: { uuid: string }) {
       if (eksporDrive && me.driveTersambung) {
         try {
           const resDocs = await ok(
-            await api.sesi[":uuid"].dokumen["google-docs"].ekspor.$post({ param: { uuid } })
+            await api.sesi[":uuid"].dokumen["google-docs"].ekspor.$post({
+              param: { uuid },
+              json: { sertakanAudio: simpanAudioDrive },
+            })
           );
-          return { docsUrl: resDocs.url };
+          return { docsUrl: resDocs.url, audioUrl: resDocs.audioUrl };
         } catch (e) {
-          console.error("Ekspor Google Docs latar belakang gagal:", e);
+          console.error("Ekspor Google Docs / Drive latar belakang gagal:", e);
         }
       }
-      return { docsUrl: null };
+      return { docsUrl: null, audioUrl: null };
     },
     onSuccess: async (hasil) => {
       toast.success("Dokumen disetujui");
@@ -51,7 +55,9 @@ export function SetujuiDokumen({ uuid }: { uuid: string }) {
         toast.success("Notulensi berhasil diekspor ke Google Docs!");
         window.open(hasil.docsUrl, "_blank", "noopener,noreferrer");
       }
-      setBuka(false);
+      if (hasil.audioUrl) {
+        toast.success("Salinan audio berhasil disimpan di Google Drive!");
+      }
       await qc.invalidateQueries({ queryKey: dokumenKey });
       await qc.invalidateQueries({ queryKey: docsStatusKey });
       await qc.invalidateQueries({ queryKey: ["pengetahuan"] });
@@ -84,13 +90,13 @@ export function SetujuiDokumen({ uuid }: { uuid: string }) {
           </DialogDescription>
         </DialogHeader>
 
-        {/* Opsi Ekspor ke Google Docs */}
-        <div className="rounded-xl border bg-muted/40 p-3.5 space-y-2">
+        {/* Opsi Ekspor ke Google Docs & Drive */}
+        <div className="rounded-xl border bg-muted/40 p-3.5 space-y-3">
           <div className="flex items-center justify-between gap-3">
             <div className="space-y-0.5">
               <Label htmlFor="switch-drive" className="flex items-center gap-1.5 text-sm font-semibold cursor-pointer">
                 <CloudIcon className="size-4 text-primary" />
-                Simpan ke Google Docs
+                Simpan notulen ke Google Docs
               </Label>
               <p className="text-xs text-muted-foreground">
                 {me.driveTersambung
@@ -105,8 +111,27 @@ export function SetujuiDokumen({ uuid }: { uuid: string }) {
               onCheckedChange={setEksporDrive}
             />
           </div>
-        </div>
 
+          {eksporDrive && me.driveTersambung && (
+            <div className="flex items-center justify-between gap-3 pt-2.5 border-t border-border/50">
+              <div className="space-y-0.5">
+                <Label htmlFor="switch-audio-drive" className="flex items-center gap-1.5 text-sm font-semibold cursor-pointer">
+                  <MusicIcon className="size-4 text-primary" />
+                  Simpan rekaman audio ke Drive
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Salinan berkas MP3 disimpan permanen di folder 'ruma. Notulen' (aman meski retensi 90 hari di server habis).
+                </p>
+              </div>
+              <Switch
+                id="switch-audio-drive"
+                checked={simpanAudioDrive}
+                disabled={setujui.isPending}
+                onCheckedChange={setSimpanAudioDrive}
+              />
+            </div>
+          )}
+        </div>
         <DialogFooter>
           <Button variant="outline" disabled={setujui.isPending} onClick={() => setBuka(false)}>
             Batal
