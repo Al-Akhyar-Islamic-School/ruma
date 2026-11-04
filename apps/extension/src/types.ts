@@ -72,6 +72,28 @@ export type PesanOffscreenMulai = {
   authToken: string;
   kategori?: string;
 };
+export type PesanBgBuatSesi = {
+  tipe: "BG_BUAT_SESI";
+  judul: string;
+  kodeMeet: string;
+  kategori?: string;
+  mime: string;
+};
+
+export type PesanBgUnggahChunk = {
+  tipe: "BG_UNGGAH_CHUNK";
+  uuid: string;
+  seq: number;
+  dataBase64: string;
+};
+
+export type PesanBgSelesaikanSesi = {
+  tipe: "BG_SELESAIKAN_SESI";
+  uuid: string;
+  jumlahChunk: number;
+  durasiDetik: number;
+  penandaDetik?: number[];
+};
 
 export type PesanEkstensi =
   | PesanMulaiRekam
@@ -82,6 +104,9 @@ export type PesanEkstensi =
   | PesanKeadaanDiperbarui
   | PesanLevelAudio
   | PesanOffscreenMulai
+  | PesanBgBuatSesi
+  | PesanBgUnggahChunk
+  | PesanBgSelesaikanSesi
   | { tipe: "GET_SESSION_AUTH" }
   | { tipe: "OFFSCREEN_PAUSE" }
   | { tipe: "OFFSCREEN_RESUME" }

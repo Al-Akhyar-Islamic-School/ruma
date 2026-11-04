@@ -1,4 +1,3 @@
-import { RumaApiClient } from "../lib/api";
 import type { KeadaanPerekam } from "../types";
 
 export type OpsiPerekamMeet = {
@@ -12,6 +11,19 @@ export type OpsiPerekamMeet = {
   onAudioLevel: (level: number) => void;
 };
 
+async function blobToBase64(blob: Blob): Promise<string> {
+  const { promise, resolve, reject } = Promise.withResolvers<string>();
+  const reader = new FileReader();
+  reader.onloadend = () => {
+    const res = reader.result as string;
+    const base64 = res.split(",")[1] || "";
+    resolve(base64);
+  };
+  reader.onerror = () => reject(new Error("Gagal membaca audio blob."));
+  reader.readAsDataURL(blob);
+  return promise;
+}
+
 export class MeetTabRecorder {
   private displayStream: MediaStream | null = null;
   private micStream: MediaStream | null = null;
@@ -19,7 +31,6 @@ export class MeetTabRecorder {
   private destination: MediaStreamAudioDestinationNode | null = null;
   private analyser: AnalyserNode | null = null;
   private recorder: MediaRecorder | null = null;
-  private apiClient: RumaApiClient | null = null;
 
   private sesiUuid: string | null = null;
   private sesiUrl: string | null = null;
@@ -30,9 +41,7 @@ export class MeetTabRecorder {
   private timerMeter: number | null = null;
   private rantaiUnggah: Promise<void> = Promise.resolve();
 
-  constructor(private readonly opsi: OpsiPerekamMeet) {
-    this.apiClient = new RumaApiClient(opsi.rumaUrl, opsi.authToken);
-  }
+  constructor(private readonly opsi: OpsiPerekamMeet) {}
 
   public async mulai(): Promise<void> {
     this.opsi.onUpdateState({
@@ -42,7 +51,6 @@ export class MeetTabRecorder {
 
     try {
       // 1. Minta akses audio tab Google Meet
-      // suppressLocalAudioPlayback: false memastikan suara rapat tetap keluar di speaker/headphone
       const constraints: DisplayMediaStreamOptions = {
         video: {
           displaySurface: "browser",
@@ -62,7 +70,6 @@ export class MeetTabRecorder {
       const stream = await navigator.mediaDevices.getDisplayMedia(constraints);
       this.displayStream = stream;
 
-      // Ambil audio track dari tab Meet
       const audioTracks = stream.getAudioTracks();
       if (audioTracks.length === 0) {
         stream.getTracks().forEach((t) => t.stop());
@@ -101,7 +108,6 @@ export class MeetTabRecorder {
       await this.audioCtx.resume();
       this.destination = this.audioCtx.createMediaStreamDestination();
 
-      // AnalyserNode untuk visualisasi level suara
       this.analyser = this.audioCtx.createAnalyser();
       this.analyser.fftSize = 256;
 
@@ -115,42 +121,72 @@ export class MeetTabRecorder {
 
       // AnalyserNode meneruskan audio ke destination rekaman MediaRecorder
       this.analyser.connect(this.destination);
-      // 5. Buat sesi rapat di API ruma.
-      if (!this.apiClient) {
-        throw new Error("Klien API ruma. belum diinisialisasi.");
-      }
 
-      const resSesi = await this.apiClient.buatSesi({
-        judul: this.opsi.judul,
-        mime: "audio/webm;codecs=opus",
-        kodeMeet: this.opsi.kodeMeet,
-        kategori: this.opsi.kategori,
+      // 4. Buat sesi rapat via background service worker (menghindari blokir CSP/CORS Google Meet)
+      const resSesi = await new Promise<{ ok: boolean; uuid?: string; sesiUrl?: string; error?: string }>((resolve) => {
+        chrome.runtime.sendMessage(
+          {
+            tipe: "BG_BUAT_SESI",
+            judul: this.opsi.judul,
+            mime: "audio/webm;codecs=opus",
+            kodeMeet: this.opsi.kodeMeet,
+            kategori: this.opsi.kategori,
+          },
+          (res) => {
+            if (chrome.runtime.lastError) {
+              resolve({ ok: false, error: chrome.runtime.lastError.message });
+            } else {
+              resolve(res || { ok: false, error: "Tidak ada respon dari background." });
+            }
+          }
+        );
       });
 
+      if (!resSesi.ok || !resSesi.uuid) {
+        throw new Error(resSesi.error || "Gagal membuat sesi rapat di server ruma.");
+      }
+
       this.sesiUuid = resSesi.uuid;
-      this.sesiUrl = `${this.opsi.rumaUrl.replace(/\/+$/, "")}/sesi/${this.sesiUuid}`;
+      this.sesiUrl = resSesi.sesiUrl || `${this.opsi.rumaUrl.replace(/\/+$/, "")}/sesi/${this.sesiUuid}`;
       this.seq = 0;
       this.detikMulai = Date.now();
       this.detikTertahan = 0;
       this.sedangJeda = false;
       this.rantaiUnggah = Promise.resolve();
 
-      // 6. Buat MediaRecorder untuk pemotongan per 30 detik
+      // 5. Buat MediaRecorder untuk pemotongan per 30 detik
       this.recorder = new MediaRecorder(this.destination.stream, {
         mimeType: "audio/webm;codecs=opus",
         audioBitsPerSecond: 32_000,
       });
 
       this.recorder.ondataavailable = (e: BlobEvent) => {
-        if (e.data && e.data.size > 0 && this.sesiUuid && this.apiClient) {
+        if (e.data && e.data.size > 0 && this.sesiUuid) {
           const currentSeq = this.seq++;
           const blob = e.data;
           this.opsi.onUpdateState({ totalChunk: this.seq });
 
           this.rantaiUnggah = this.rantaiUnggah
             .then(async () => {
-              if (!this.apiClient || !this.sesiUuid) return;
-              await this.apiClient.unggahChunk(this.sesiUuid, currentSeq, blob);
+              if (!this.sesiUuid) return;
+              const base64 = await blobToBase64(blob);
+              await new Promise<void>((resolve, reject) => {
+                chrome.runtime.sendMessage(
+                  {
+                    tipe: "BG_UNGGAH_CHUNK",
+                    uuid: this.sesiUuid,
+                    seq: currentSeq,
+                    dataBase64: base64,
+                  },
+                  (res: { ok: boolean; error?: string } | undefined) => {
+                    if (chrome.runtime.lastError || (res && !res.ok)) {
+                      reject(new Error(res?.error || chrome.runtime.lastError?.message));
+                    } else {
+                      resolve();
+                    }
+                  }
+                );
+              });
             })
             .catch((err) => {
               console.error(`Gagal unggah chunk ${currentSeq}:`, err);
@@ -181,7 +217,6 @@ export class MeetTabRecorder {
     } catch (err) {
       this.bersihkan();
       if (err instanceof DOMException && (err.name === "NotAllowedError" || err.name === "AbortError")) {
-        // Pengguna membatalkan dialog pemilihan tab
         this.opsi.onUpdateState({
           status: "siap",
           galat: null,
@@ -244,11 +279,23 @@ export class MeetTabRecorder {
       this.recorder.stop();
       await this.rantaiUnggah;
 
-      if (this.apiClient && this.sesiUuid) {
-        await this.apiClient.selesaikanSesi({
-          uuid: this.sesiUuid,
-          jumlahChunk: this.seq,
-          durasiDetik,
+      if (this.sesiUuid) {
+        await new Promise<void>((resolve, reject) => {
+          chrome.runtime.sendMessage(
+            {
+              tipe: "BG_SELESAIKAN_SESI",
+              uuid: this.sesiUuid,
+              jumlahChunk: this.seq,
+              durasiDetik,
+            },
+            (res: { ok: boolean; error?: string } | undefined) => {
+              if (chrome.runtime.lastError || (res && !res.ok)) {
+                reject(new Error(res?.error || chrome.runtime.lastError?.message));
+              } else {
+                resolve();
+              }
+            }
+          );
         });
       }
 

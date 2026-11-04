@@ -1,3 +1,4 @@
+import { RumaApiClient } from "../lib/api";
 import { ambilTokenAutentikasi, muatKonfigurasi } from "../lib/config";
 import type { KeadaanPerekam, PesanEkstensi } from "../types";
 
@@ -93,6 +94,85 @@ chrome.runtime.onMessage.addListener((pesan: PesanEkstensi, sender, kirimBalasan
     return true;
   }
 
+  if (pesan.tipe === "BG_BUAT_SESI") {
+    void (async () => {
+      try {
+        const cfg = await muatKonfigurasi();
+        const authData = await ambilTokenAutentikasi(cfg.rumaUrl);
+        if (!authData) {
+          kirimBalasan({
+            ok: false,
+            error: "Belum masuk ke ruma. Buka https://ruma.alakhyar.sch.id dan login dengan Google, lalu coba lagi.",
+          });
+          return;
+        }
+        const client = new RumaApiClient(authData.activeUrl, authData.token);
+        const res = await client.buatSesi({
+          judul: pesan.judul,
+          mime: pesan.mime,
+          kodeMeet: pesan.kodeMeet,
+          kategori: pesan.kategori,
+        });
+        const sesiUrl = `${authData.activeUrl.replace(/\/+$/, "")}/sesi/${res.uuid}`;
+        kirimBalasan({ ok: true, uuid: res.uuid, sesiUrl });
+      } catch (err) {
+        console.error("Gagal membuat sesi di background:", err);
+        kirimBalasan({ ok: false, error: err instanceof Error ? err.message : String(err) });
+      }
+    })();
+    return true;
+  }
+
+  if (pesan.tipe === "BG_UNGGAH_CHUNK") {
+    void (async () => {
+      try {
+        const cfg = await muatKonfigurasi();
+        const authData = await ambilTokenAutentikasi(cfg.rumaUrl);
+        if (!authData) {
+          kirimBalasan({ ok: false, error: "Sesi ruma. tidak ditemukan." });
+          return;
+        }
+        const client = new RumaApiClient(authData.activeUrl, authData.token);
+        const binaryString = atob(pesan.dataBase64);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        const blob = new Blob([bytes], { type: "audio/webm;codecs=opus" });
+        await client.unggahChunk(pesan.uuid, pesan.seq, blob);
+        kirimBalasan({ ok: true });
+      } catch (err) {
+        console.error(`Gagal unggah chunk ${pesan.seq} di background:`, err);
+        kirimBalasan({ ok: false, error: err instanceof Error ? err.message : String(err) });
+      }
+    })();
+    return true;
+  }
+
+  if (pesan.tipe === "BG_SELESAIKAN_SESI") {
+    void (async () => {
+      try {
+        const cfg = await muatKonfigurasi();
+        const authData = await ambilTokenAutentikasi(cfg.rumaUrl);
+        if (!authData) {
+          kirimBalasan({ ok: false, error: "Sesi ruma. tidak ditemukan." });
+          return;
+        }
+        const client = new RumaApiClient(authData.activeUrl, authData.token);
+        const res = await client.selesaikanSesi({
+          uuid: pesan.uuid,
+          jumlahChunk: pesan.jumlahChunk,
+          durasiDetik: pesan.durasiDetik,
+          penandaDetik: pesan.penandaDetik,
+        });
+        kirimBalasan({ ok: true, res });
+      } catch (err) {
+        console.error("Gagal menyelesaikan sesi di background:", err);
+        kirimBalasan({ ok: false, error: err instanceof Error ? err.message : String(err) });
+      }
+    })();
+    return true;
+  }
   if (pesan.tipe === "START_RECORDING") {
     const targetTabId = pesan.targetTabId ?? sender.tab?.id;
     if (targetTabId) {
