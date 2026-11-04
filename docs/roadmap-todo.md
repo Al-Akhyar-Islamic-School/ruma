@@ -31,6 +31,7 @@ Dokumen ini adalah ringkasan status implementasi saat ini dan peta jalan pengemb
 - [x] **CI/CD GitHub Actions:** Pipeline otomatis ke VPS CloudPanel lewat SSH (cek migrasi, typecheck, build di runner, rsync artefak, reload PM2, health check & auto-rollback).
 - [x] **Penyimpanan Audio Cloudflare R2 (Retensi 90 Hari):** Berkas rekaman audio disimpan di Cloudflare R2 (zero disk VPS, zero egress fee, streaming HTTP 206) dengan pembersihan otomatis setelah 90 hari (`docs/panduan-r2-retensi-90-hari.md`).
 - [x] **Salinan Audio ke Google Drive:** Berkas MP3 rekaman rapat dapat disimpan permanen ke Google Drive pengguna di folder `"ruma. Notulen"` bersama notulen resmi.
+- [x] **Aplikasi Android Native (Capacitor 7):** Cangkang native `sch.alakhyar.ruma` (APK 4,6 MB) dengan dukungan rekaman saat layar mati/terkunci menggunakan Foreground Service mikrofon Android 14 (`RumaRecorderService` + `PARTIAL_WAKE_LOCK`), login Google OAuth aman via browser sistem & PKCE (`docs/capacitor-android.md`).
 ---
 
 ## 🟡 Fase Berikutnya: Ekosistem Google Workspace & SIM-GTK

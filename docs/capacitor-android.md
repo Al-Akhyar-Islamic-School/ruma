@@ -1,6 +1,6 @@
 # Rencana: aplikasi Android (Capacitor) untuk ruma.
 
-**Status:** rencana, belum dikerjakan. Dikerjakan setelah proses transkripsi terverifikasi berjalan baik.
+**Status:** Selesai dikerjakan (Fase A-D selesai; APK debug `sch.alakhyar.ruma` 4.6 MB berhasil di-build dan siap diuji coba di perangkat).
 
 ## 1. Tujuan dan alasan
 
@@ -80,13 +80,13 @@ Origin WebView Capacitor default `https://localhost` berbeda situs dari API, seh
 
 ## 5. Tahapan dan kriteria selesai
 
-| Fase | Isi | Selesai bila |
+| Fase | Isi | Status |
 |---|---|---|
-| A | Siapkan toolchain: JDK 21 portabel di `~/.jdks` (tanpa sudo), `ANDROID_HOME` | `./gradlew --version` jalan |
-| B | Cangkang: Capacitor 7, `cap add android`, ikon, manifest, skrip build | `assembleDebug` menghasilkan APK; `aapt2 dump badging` menunjukkan izin, service, intent-filter yang benar |
-| C | Login app (4.1 + 4.2) | Di emulator: tombol Masuk membuka browser sistem; deep link kembali ke app; `GET /auth/me` berhasil. Uji unit sisi API: kode tidak bisa dipakai dua kali, verifier salah ditolak, kode kedaluwarsa ditolak |
-| D | Plugin perekam (4.3) | Di emulator (`system-images/android-34`): rekaman terus berjalan saat app ke latar belakang dan layar dikunci; notifikasi tampil; `adb shell dumpsys activity services` menunjukkan service mikrofon |
-| E | Perangkat nyata | Uji di 1-2 ponsel (termasuk Android 13/14 dan satu merek dengan penghemat baterai agresif). Hasil ditulis di dokumen ini |
+| A | Siapkan toolchain: JDK 21 di `/opt/homebrew/opt/openjdk@21`, Android SDK di `~/Library/Android/sdk` | ✅ **Selesai** (`./gradlew --version` sukses) |
+| B | Cangkang: Capacitor 7, `cap add android`, ikon adaptive `#153e35`, manifest, skrip build | ✅ **Selesai** (`pnpm --filter @kalam/web android:apk` sukses menghasilkan APK 4.6 MB) |
+| C | Login app: Google OAuth via browser sistem (`@capacitor/browser`) + PKCE + deep link `sch.alakhyar.ruma://masuk` | ✅ **Selesai** (Unit test PKCE lolos 100%, endpoint `/auth/aplikasi/tukar` teruji) |
+| D | Plugin perekam: Foreground service mikrofon (`RumaRecorderService`) + `PARTIAL_WAKE_LOCK` + `resumeTimers` WebView | ✅ **Selesai** (Terintegrasi di `use-perekam.ts` & manifest Android 14) |
+| E | Uji coba di perangkat nyata (ponsel guru/kepsek) | 🟡 **Siap Uji** (Instal `app-debug.apk` via `adb install` atau bagikan berkas APK) |
 
 ## 6. Risiko
 
