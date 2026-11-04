@@ -89,6 +89,7 @@ export function LayarRekam({ uuid, userId, judul, tipeSesi, subjudul, maksDurasi
 
   const perekam = usePerekam({
     mime,
+    judul,
     // Berhenti otomatis di batas + toleransi, bukan di batas yang disetujui; tampilan sisa waktu tetap memakai batas asli.
     maksDurasiDetik: batasHentiDetik(maksDurasiDetik),
     onPotongan: simpanPotongan,

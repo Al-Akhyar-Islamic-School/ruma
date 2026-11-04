@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { RumaRecorder } from "./native";
 
 /**
  * `siap` → `meminta-izin` → `merekam` ⇄ `dijeda` → `berhenti`.
@@ -10,6 +11,7 @@ export type PotonganBaru = { seq: number; blob: Blob; /** Detik rekam saat poton
 
 type Opsi = {
   mime: string;
+  judul?: string;
   maksDurasiDetik: number | null;
   /** Dipanggil berurutan satu-per-satu; harus menyimpan potongan ke penyimpanan tetap. */
   onPotongan: (p: PotonganBaru) => Promise<void>;
@@ -88,6 +90,7 @@ export function usePerekam(opsi: Opsi) {
     const s = sesi.current;
     sesi.current = null;
     if (!s) return;
+    void RumaRecorder.berhenti().catch(() => undefined);
     lepasStream(s.stream);
     tutupKonteks(s.ctx);
     setAnalyser(null);
@@ -193,6 +196,7 @@ export function usePerekam(opsi: Opsi) {
     mulaiSegmen.current = performance.now();
     setAnalyser(analyserBaru);
     setFase("merekam");
+    void RumaRecorder.mulai({ judul: opsiRef.current.judul || "Sesi Rapat" }).catch(() => undefined);
   }, [bekukan, hitungMs, lepas, setFase]);
 
   const jeda = useCallback(() => {
@@ -218,6 +222,7 @@ export function usePerekam(opsi: Opsi) {
    */
   const berhenti = useCallback(
     async (buangHasil = false): Promise<{ detik: number; jumlahChunk: number }> => {
+      void RumaRecorder.berhenti().catch(() => undefined);
       diminta.current = true;
       buang.current = buangHasil;
       const s = sesi.current;
