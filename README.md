@@ -77,12 +77,36 @@ Nama aplikasi yang tampil ke pengguna adalah **ruma.** Pengenal internal (paket 
 ## 3. Pembagian Tugas AI (Hybrid Architecture)
 
 | Tugas | Engine AI | Alasan Pemilihan | Biaya |
-|---|---|---|---|
 | **Transkripsi Audio ➔ Teks** | **Cloudflare Workers AI**<br>`@cf/openai/whisper-large-v3-turbo` | Whisper adalah standar terbaik transkripsi audio multibahasa (Indonesia, istilah Arab, istilah sekolah). Cepat dan ringan. | **GRATIS** (10.000 neuron/hari Cloudflare ≈ **4 jam rekaman/hari**). |
+| **Penyimpanan Objek Audio** | **Cloudflare R2**<br>(S3-compatible Object Storage) | Berkas audio rekaman rapat disimpan langsung di R2 dengan kebijakan retensi 90 hari, membebaskan kapasitas disk SSD VPS dan tanpa biaya transfer (*zero egress fee*). | **GRATIS / Sangat Hemat** (10 GB gratis/bulan). |
 | **Penalaran Dokumen Panjang (Notulen & Supervisi)** | **Google Gemini**<br>`gemini-3.7-flash` / `gemini-2.5-flash` (via Gateway Sekolah) | Rekaman 1–2 jam menghasilkan transkrip 15.000+ kata. Gemini punya **context window hingga 2 JUTA token**, sehingga transkrip utuh bisa dimasukkan tanpa perlu dipotong-potong. | **GRATIS / Hemat** via gateway sekolah yang sudah ada. |
 | **Failover / Cadangan Darurat** | **Cloudflare Workers AI**<br>`@cf/meta/llama-3.3-70b-instruct-fp8-fast` | Jika gateway Gemini sekolah mengalami gangguan, Llama 3.3 70B di Cloudflare siap menggantikan peran penyusunan notulen. | Backup otomatis. |
-
 ---
+### Penyimpanan Audio & Retensi Data (Cloudflare R2 + Google Drive)
+
+Perekaman audio rapat di ruma. menggunakan arsitektur penyimpanan bertingkat yang efisien dan aman:
+
+1. **Cloudflare R2 (Audio Operasional Aktif — Retensi 90 Hari)**:
+   - Berkas rekaman (`playback.mp3`) disimpan di Cloudflare R2 melalui adapter `R2AudioStorage` (`@aws-sdk/client-s3`).
+   - **Zero Disk VPS:** Disk SSD server tidak lagi terbebani tumpukan file audio rapat berjam-jam (~15–45 MB/sesi).
+   - **Zero Egress Fee:** Pemutar audio di antarmuka web streaming langsung dari R2 via HTTP Range Request (status 206) tanpa biaya transfer data keluar.
+   - **Retensi Otomatis 90 Hari:** Audio operasional aktif di server terhapus otomatis setelah 90 hari melalui *Object Lifecycle Rules* Cloudflare R2 (panduan di [`docs/panduan-r2-retensi-90-hari.md`](docs/panduan-r2-retensi-90-hari.md)). Dokumen notulen, ringkasan, dan teks transkrip tetap aman permanen di database.
+   - **Fallback Lokal Dev:** Bila variabel R2 tidak diisi pada lingkungan pengembangan lokal, sistem otomatis berjalan dalam mode fallback ke disk lokal (`./data/audio`).
+
+2. **Google Drive (Arsip Audio Jangka Panjang di Folder 'ruma. Notulen')**:
+   - Saat menyetujui dokumen notulen, pengguna dapat mengaktifkan opsi *"Simpan rekaman audio ke Drive"*.
+   - Salinan berkas MP3 akan diunggah ke Google Drive sekolah di folder `"ruma. Notulen"` berdampingan dengan berkas Google Docs resmi, dan dibagikan otomatis ke peserta rapat yang diundang.
+   - Berkas di Google Drive tidak terpengaruh batas retensi 90 hari server dan tersimpan permanen sebagai arsip resmi sekolah.
+
+3. **Kredensial Cloudflare di `.env`**:
+   > ⚠️ **Perhatian: Jangan tertukar antara Token Workers AI dan Token R2!**
+   * **`CF_API_TOKEN`**: Token Cloudflare API umum (My Profile > API Tokens) dengan izin **Workers AI (Read)** untuk menjalankan model transkripsi Whisper.
+   * **`R2_ACCESS_KEY_ID` & `R2_SECRET_ACCESS_KEY`**: Kredensial S3 khusus yang didapat dari menu **R2 Object Storage > Manage R2 API Tokens** (Object Read & Write).
+   * Jalankan uji diagnostik koneksi kapan saja dengan perintah:
+     ```bash
+     pnpm --filter @kalam/api test:storage
+     ```
+
 
 ## 4. Struktur Folder Rencana
 
@@ -140,7 +164,7 @@ pnpm dev
   - `GET /sesi/:uuid` status + daftar `seq` yang sudah diterima (klien memakainya untuk melanjutkan unggahan dari IndexedDB).
   - `POST /sesi/:uuid/finish` `{jumlah_chunk, durasi_detik}`; 409 dengan daftar `missing`/`extra` bila chunk tidak lengkap; sukses mengubah status ke `mentranskrip`.
   - `GET /sesi` daftar sesi milik sendiri.
-- Audio mentah disimpan per potongan di `AUDIO_DIR/<uuid>/<seq>.part` (antarmuka `AudioStorage` di `src/storage.ts`, bisa diganti R2). Potongan harus disambung berurutan oleh worker transkripsi. Folder ini wajib ikut backup.
+- Audio mentah disimpan di Cloudflare R2 (`<uuid>/playback.mp3`) atau disk lokal `AUDIO_DIR` sebagai fallback dev (antarmuka `AudioStorage` di `src/storage.ts`).
 
 ### Undangan: siapa boleh mendengarkan & membaca sesi
 
