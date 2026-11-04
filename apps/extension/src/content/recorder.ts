@@ -101,19 +101,20 @@ export class MeetTabRecorder {
       await this.audioCtx.resume();
       this.destination = this.audioCtx.createMediaStreamDestination();
 
+      // AnalyserNode untuk visualisasi level suara
+      this.analyser = this.audioCtx.createAnalyser();
+      this.analyser.fftSize = 256;
+
       const meetSource = this.audioCtx.createMediaStreamSource(new MediaStream([meetAudioTrack]));
-      meetSource.connect(this.destination);
+      meetSource.connect(this.analyser);
 
       if (this.micStream) {
         const micSource = this.audioCtx.createMediaStreamSource(this.micStream);
-        micSource.connect(this.destination);
+        micSource.connect(this.analyser);
       }
 
-      // 4. Pasang analyser untuk visualisasi level suara
-      this.analyser = this.audioCtx.createAnalyser();
-      this.analyser.fftSize = 256;
-      this.destination.connect(this.analyser);
-
+      // AnalyserNode meneruskan audio ke destination rekaman MediaRecorder
+      this.analyser.connect(this.destination);
       // 5. Buat sesi rapat di API ruma.
       if (!this.apiClient) {
         throw new Error("Klien API ruma. belum diinisialisasi.");

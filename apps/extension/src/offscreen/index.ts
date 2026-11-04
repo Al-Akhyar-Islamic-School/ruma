@@ -141,26 +141,22 @@ async function mulaiRekam(msg: PesanOffscreenMulai) {
     audioCtx = new AudioContext();
     await audioCtx.resume();
     destination = audioCtx.createMediaStreamDestination();
-
-    // Hubungkan tab audio ke destination (rekaman)
-    const tabSource = audioCtx.createMediaStreamSource(tabStream);
-    tabSource.connect(destination);
-
-    // PENTING: Hubungkan juga tab audio ke audioCtx.destination (speaker)
-    // agar pengguna tetap bisa mendengar suara peserta rapat di Google Meet!
-    tabSource.connect(audioCtx.destination);
-
-    // Hubungkan mikrofon lokal ke destination rekaman (jika ada)
-    if (micStream) {
-      const micSource = audioCtx.createMediaStreamSource(micStream);
-      micSource.connect(destination);
-    }
-
-    // Meter audio untuk visualisasi
     analyser = audioCtx.createAnalyser();
     analyser.fftSize = 256;
-    destination.connect(analyser);
 
+    // Hubungkan tab audio ke analyser dan ke speaker lokal
+    const tabSource = audioCtx.createMediaStreamSource(tabStream);
+    tabSource.connect(analyser);
+    tabSource.connect(audioCtx.destination);
+
+    // Hubungkan mikrofon ke analyser jika ada
+    if (micStream) {
+      const micSource = audioCtx.createMediaStreamSource(micStream);
+      micSource.connect(analyser);
+    }
+
+    // Analyser meneruskan suara campuran ke destination rekaman
+    analyser.connect(destination);
     // 4. Buat sesi di backend ruma.
     const resSesi = await apiClient.buatSesi({
       judul: msg.judul,
