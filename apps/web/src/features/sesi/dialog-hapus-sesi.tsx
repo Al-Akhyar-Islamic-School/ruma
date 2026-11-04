@@ -22,12 +22,14 @@ export function TombolHapusSesi({
   status,
   keBeranda = false,
   varian = "outline",
+  hanyaIkon = false,
 }: {
   uuid: string;
   judul: string;
   status: StatusSesi;
   keBeranda?: boolean;
   varian?: "outline" | "ghost" | "destructive";
+  hanyaIkon?: boolean;
 }) {
   const [buka, setBuka] = useState(false);
   const qc = useQueryClient();
@@ -61,12 +63,18 @@ export function TombolHapusSesi({
       <DialogTrigger asChild>
         <Button
           variant={varian}
-          size="sm"
-          className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+          size={hanyaIkon ? "icon" : "sm"}
+          className={
+            hanyaIkon
+              ? "size-7 shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+              : "text-destructive hover:bg-destructive/10 hover:text-destructive"
+          }
+          title={sudahSelesai ? "Hapus rapat selesai" : "Hapus rapat"}
+          aria-label="Hapus rapat"
           onClick={(e: React.MouseEvent) => e.stopPropagation()}
         >
-          <Trash2Icon className="size-4" />
-          <span>Hapus</span>
+          <Trash2Icon className={hanyaIkon ? "size-3.5" : "size-4"} />
+          {!hanyaIkon && <span>Hapus</span>}
         </Button>
       </DialogTrigger>
       <DialogContent onClick={(e: React.MouseEvent) => e.stopPropagation()}>

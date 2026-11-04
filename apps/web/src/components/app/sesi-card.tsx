@@ -37,9 +37,11 @@ export function SesiCard({ s }: { s: SesiRingkas }) {
           <Ikon className="size-5" aria-hidden />
         </span>
         <div className="min-w-0 flex-1 space-y-1">
-          <div className="flex items-start justify-between gap-2">
-            <p className="line-clamp-2 font-semibold leading-snug">{s.judul}</p>
-            <div className="flex items-center gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-start justify-between gap-2.5">
+            <p className="line-clamp-2 min-w-0 flex-1 font-semibold leading-snug break-words">
+              {s.judul}
+            </p>
+            <div className="flex items-center gap-1 shrink-0 pt-0.5" onClick={(e) => e.stopPropagation()}>
               <StatusBadge status={s.status} label={status.label} tone={status.tone} />
               {!s.perekam && (
                 <TombolHapusSesi
@@ -47,6 +49,7 @@ export function SesiCard({ s }: { s: SesiRingkas }) {
                   judul={s.judul}
                   status={s.status}
                   varian="ghost"
+                  hanyaIkon={true}
                 />
               )}
             </div>
