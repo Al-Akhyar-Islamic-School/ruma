@@ -2,7 +2,10 @@
   "name": "@kalam/api",
   "private": true,
   "type": "module",
-  "files": ["dist", "drizzle"],
+  "files": [
+    "dist",
+    "drizzle"
+  ],
   "scripts": {
     "dev": "tsx watch --env-file=.env src/index.ts",
     "start": "node --env-file=.env dist/index.js",
@@ -16,6 +19,7 @@
     "start:worker": "node --env-file=.env dist/worker.js"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1161.0",
     "@hono/node-server": "^2.1.6",
     "@hono/zod-validator": "^0.9.1",
     "drizzle-orm": "^0.45.4",

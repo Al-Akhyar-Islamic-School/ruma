@@ -39,6 +39,12 @@ const schema = z.object({
     .transform((v) => v?.trim() || undefined),
   // Direktori audio mentah di disk VPS. Harus masuk jadwal backup dan berada di luar folder kode.
   AUDIO_DIR: z.string().min(1).default("./data/audio"),
+  // Cloudflare R2 Storage (S3-compatible). Bila R2_BUCKET_NAME diisi, audio beralih ke R2 (retensi 90 hari).
+  R2_ACCOUNT_ID: opt(z.string().trim().min(1)),
+  R2_ACCESS_KEY_ID: opt(z.string().trim().min(1)),
+  R2_SECRET_ACCESS_KEY: opt(z.string().trim().min(1)),
+  R2_BUCKET_NAME: opt(z.string().trim().min(1)),
+  R2_ENDPOINT: opt(z.url()),
   // Daftar email (dipisah koma) yang otomatis menjadi superadmin saat login. Satu-satunya jalan menuju superadmin.
   SUPERADMIN_EMAILS: z
     .string()
