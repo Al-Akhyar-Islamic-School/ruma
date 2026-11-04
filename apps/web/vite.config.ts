@@ -33,7 +33,13 @@ export default defineConfig({
         ],
       },
       // Hanya cangkang aplikasi yang di-cache. Semua panggilan API (lintas origin) selalu ke jaringan.
-      workbox: { navigateFallback: "/index.html", globPatterns: ["**/*.{js,css,html,svg,png,woff2}"] },
+      workbox: {
+        navigateFallback: "/index.html",
+        globPatterns: ["**/*.{js,css,html,svg,png,woff2}"],
+        skipWaiting: true,
+        clientsClaim: true,
+        cleanupOutdatedCaches: true,
+      },
     }),
   ],
 });

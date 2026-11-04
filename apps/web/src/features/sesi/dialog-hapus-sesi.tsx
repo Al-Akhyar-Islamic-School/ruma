@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { Trash2Icon } from "lucide-react";
+import { AlertTriangleIcon, ShieldCheckIcon, Trash2Icon } from "lucide-react";
 import React, { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -71,18 +71,28 @@ export function TombolHapusSesi({
       </DialogTrigger>
       <DialogContent onClick={(e: React.MouseEvent) => e.stopPropagation()}>
         <DialogHeader>
-          <DialogTitle>
-            {sudahSelesai ? "⚠️ Konfirmasi Hapus Rapat Selesai" : "Hapus Rapat Belum Selesai?"}
+          <DialogTitle className="flex items-center gap-2 text-left">
+            {sudahSelesai && <AlertTriangleIcon className="size-5 shrink-0 text-destructive" />}
+            <span>{sudahSelesai ? "Konfirmasi Hapus Rapat Selesai" : "Hapus Rapat Belum Selesai?"}</span>
           </DialogTitle>
           <DialogDescription>
             {sudahSelesai ? (
-              <>
-                Rapat <strong>"{judul}"</strong> telah selesai dan memiliki dokumen notulen resmi. Apakah Anda yakin
-                ingin menghapus permanen sesi ini beserta berkas audio di <strong>Cloudflare R2</strong>?
-                <br />
-                <br />
-                <span className="font-semibold text-destructive">Tindakan ini tidak dapat dibatalkan.</span>
-              </>
+              <span className="block space-y-3 text-left">
+                <span>
+                  Rapat <strong>"{judul}"</strong> telah selesai dan memiliki dokumen notulen resmi. Apakah Anda yakin
+                  ingin menghapus permanen sesi ini dari ruma. beserta berkas audio di <strong>Cloudflare R2</strong>?
+                </span>
+                <span className="flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-2.5 text-xs font-medium text-emerald-800">
+                  <ShieldCheckIcon className="mt-0.5 size-4 shrink-0 text-emerald-700" />
+                  <span>
+                    <strong>Catatan:</strong> Berkas notulen Google Docs dan rekaman audio yang sudah dikirim ke{" "}
+                    <strong>Google Drive</strong> tetap <strong>AMAN</strong> dan <strong>TIDAK akan terhapus</strong>.
+                  </span>
+                </span>
+                <span className="block font-semibold text-destructive">
+                  Tindakan penghapusan di ruma. ini tidak dapat dibatalkan.
+                </span>
+              </span>
             ) : (
               <>
                 Rapat <strong>"{judul}"</strong> belum selesai diproses. Apakah Anda ingin menghapus sesi ini? Seluruh

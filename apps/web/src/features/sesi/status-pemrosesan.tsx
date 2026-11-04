@@ -1,6 +1,17 @@
 import { Link } from "@tanstack/react-router";
-import { CheckIcon, Loader2Icon, MicIcon, TriangleAlertIcon } from "lucide-react";
-import type { ReactNode } from "react";
+import {
+  AudioLinesIcon,
+  CheckCircleIcon,
+  CheckIcon,
+  FileTextIcon,
+  Loader2Icon,
+  MicIcon,
+  ShieldCheckIcon,
+  SparklesIcon,
+  TriangleAlertIcon,
+  UsersIcon,
+} from "lucide-react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -106,6 +117,44 @@ function Peringatan({ judul, children }: { judul: string; children: ReactNode })
   );
 }
 
+function KalimatProgres({ status }: { status: "mentranskrip" | "menganalisis" }) {
+  const baitMentranskrip = [
+    { teks: "Mendengarkan getar suaramu, merajut nada menjadi aksara...", ikon: MicIcon },
+    { teks: "Di helai kertas kata bertumbuh, mengalir tenang dalam keheningan...", ikon: FileTextIcon },
+    { teks: "Menangkap desir percakapan, mengabadikan jejak pemikiran...", ikon: AudioLinesIcon },
+    { teks: "Sedikit lagi suaramu tertata, menjelma makna di balik kata...", ikon: SparklesIcon },
+    { teks: "Dari hembusan suara yang bergema, terangkai baris kalimat bermakna...", ikon: CheckCircleIcon },
+  ];
+
+  const baitMenganalisis = [
+    { teks: "Menyelami samudera gagasan, merangkai benang sari keputusan...", ikon: SparklesIcon },
+    { teks: "Dari riak kata yang mengalir, mutiara mufakat kini terukir...", ikon: CheckCircleIcon },
+    { teks: "Menjodohkan niat dengan amanah, menetapkan langkah penuh barakah...", ikon: UsersIcon },
+    { teks: "Menyulam intisari permusyawaratan, menjadi panduan dan ketetapan...", ikon: FileTextIcon },
+    { teks: "Sebentar lagi fajar notulen menyingsing, rapi tertata hening bersanding...", ikon: ShieldCheckIcon },
+  ];
+
+  const daftar = status === "mentranskrip" ? baitMentranskrip : baitMenganalisis;
+  const [indeks, setIndeks] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setIndeks((prev) => (prev + 1) % daftar.length);
+    }, 3500);
+    return () => clearInterval(timer);
+  }, [daftar.length]);
+
+  const item = daftar[indeks] ?? daftar[0]!;
+  const Ikon = item.ikon;
+
+  return (
+    <div className="flex items-center gap-2.5 rounded-xl border border-primary/20 bg-primary/5 px-3.5 py-2.5 text-sm text-primary transition-all duration-300">
+      <Ikon className="size-4 shrink-0 animate-pulse text-primary" aria-hidden />
+      <span className="font-medium animate-in fade-in duration-300">{item.teks}</span>
+    </div>
+  );
+}
+
 /**
  * Status pemrosesan sesi yang belum selesai: stepper + penjelasan, atau peringatan merekam/gagal.
  * Tidak dirender untuk status `selesai`.
@@ -185,18 +234,21 @@ export function StatusPemrosesan({
             </p>
           </Peringatan>
         ) : (
-          <>
+          <div className="space-y-2.5">
+            {(status === "mentranskrip" || status === "menganalisis") && (
+              <KalimatProgres status={status} />
+            )}
             {status === "mentranskrip" && (
-              <p className="text-sm text-muted-foreground">
-                Sedang mengubah suara menjadi teks. Halaman ini memperbarui diri otomatis; Anda boleh menutupnya.
+              <p className="text-xs text-muted-foreground">
+                Halaman ini memperbarui diri otomatis; Anda boleh menutupnya atau berpindah aplikasi selagi pemrosesan berjalan.
               </p>
             )}
             {status === "menganalisis" && (
-              <p className="text-sm text-muted-foreground">
-                Transkrip sudah jadi. Sedang menyusun {dokumen}. Halaman ini memperbarui diri otomatis.
+              <p className="text-xs text-muted-foreground">
+                Transkrip selesai. Sedang menyusun {dokumen}. Halaman ini memperbarui diri otomatis.
               </p>
             )}
-          </>
+          </div>
         )}
 
         {percobaanGagal ? (
