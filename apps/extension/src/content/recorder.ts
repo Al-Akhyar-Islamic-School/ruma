@@ -40,7 +40,7 @@ export class MeetTabRecorder {
   private sedangJeda: boolean = false;
   private timerMeter: number | null = null;
   private rantaiUnggah: Promise<void> = Promise.resolve();
-
+  private sedangBerhenti: boolean = false;
   constructor(private readonly opsi: OpsiPerekamMeet) {}
 
   public async mulai(): Promise<void> {
@@ -264,10 +264,11 @@ export class MeetTabRecorder {
   }
 
   public async berhenti(): Promise<void> {
-    if (!this.recorder || this.recorder.state === "inactive") return;
+    if (this.sedangBerhenti || !this.recorder) return;
+    this.sedangBerhenti = true;
 
     this.hentikanMeter();
-    const durasiDetik = this.hitungDetik();
+    const durasiDetik = Math.max(1, this.hitungDetik());
 
     this.opsi.onUpdateState({
       status: "mengunggah",
@@ -276,8 +277,20 @@ export class MeetTabRecorder {
     });
 
     try {
-      this.recorder.stop();
+      // 1. Tunggu event 'stop' MediaRecorder agar ondataavailable potongan terakhir selesai diproses
+      if (this.recorder.state !== "inactive") {
+        const rec = this.recorder;
+        await new Promise<void>((selesai) => {
+          rec.addEventListener("stop", () => selesai(), { once: true });
+          rec.stop();
+        });
+      }
+
+      // 2. Tunggu seluruh rantai unggah potongan audio selesai ke server ruma
       await this.rantaiUnggah;
+
+      // 3. Selesaikan sesi dengan jumlah chunk yang benar-benar terunggah
+      const totalChunk = this.seq;
 
       if (this.sesiUuid) {
         await new Promise<void>((resolve, reject) => {
@@ -285,7 +298,7 @@ export class MeetTabRecorder {
             {
               tipe: "BG_SELESAIKAN_SESI",
               uuid: this.sesiUuid,
-              jumlahChunk: this.seq,
+              jumlahChunk: totalChunk,
               durasiDetik,
             },
             (res: { ok: boolean; error?: string } | undefined) => {
@@ -298,7 +311,6 @@ export class MeetTabRecorder {
           );
         });
       }
-
       const hasilUrl = this.sesiUrl;
 
       this.opsi.onUpdateState({

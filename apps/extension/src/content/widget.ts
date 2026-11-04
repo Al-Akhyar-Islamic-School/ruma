@@ -273,9 +273,13 @@ export class RumaMeetWidget {
       });
     }
 
-    const btnSelesai = this.shadow.querySelector("#btn-selesai");
+    const btnSelesai = this.shadow.querySelector<HTMLButtonElement>("#btn-selesai");
     if (btnSelesai) {
       btnSelesai.addEventListener("click", () => {
+        btnSelesai.disabled = true;
+        btnSelesai.textContent = "Menyimpan...";
+        const btnJedaEl = this.shadow.querySelector<HTMLButtonElement>("#btn-jeda");
+        if (btnJedaEl) btnJedaEl.disabled = true;
         this.listeners.onBerhenti();
       });
     }
