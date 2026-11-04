@@ -18,6 +18,7 @@ import { env } from "../env.js";
 
 const uuidParam = z.object({ uuid: z.uuid() });
 const tugasParam = z.object({ uuid: z.uuid(), id: z.coerce.number().int().positive() });
+const eksporDocsBody = z.object({ sertakanAudio: z.boolean().optional() }).optional();
 
 
 /**
@@ -207,16 +208,20 @@ export const hasilRoutes = new Hono<AuthEnv>()
     }
   })
   // Ekspor notulen yang disetujui ke Google Docs
-  .post("/:uuid/dokumen/google-docs/ekspor", zValidator("param", uuidParam), async (c) => {
-    const user = c.var.user;
-    const s = await findOwn(user, c.req.valid("param").uuid);
-    if (!s) return c.json({ error: "not_found" }, 404);
-    const [d] = await db.select().from(dokumen).where(eq(dokumen.sesiId, s.id)).limit(1);
-    if (!d || d.statusVerifikasi !== "disetujui") {
-      return c.json({ error: "dokumen_belum_disetujui" }, 400);
-    }
-    const body = await c.req.json().catch(() => ({} as Record<string, unknown>));
-    const sertakanAudio = Boolean(body?.sertakanAudio);
+  .post(
+    "/:uuid/dokumen/google-docs/ekspor",
+    zValidator("param", uuidParam),
+    zValidator("json", eksporDocsBody),
+    async (c) => {
+      const user = c.var.user;
+      const s = await findOwn(user, c.req.valid("param").uuid);
+      if (!s) return c.json({ error: "not_found" }, 404);
+      const [d] = await db.select().from(dokumen).where(eq(dokumen.sesiId, s.id)).limit(1);
+      if (!d || d.statusVerifikasi !== "disetujui") {
+        return c.json({ error: "dokumen_belum_disetujui" }, 400);
+      }
+      const body = c.req.valid("json");
+      const sertakanAudio = Boolean(body?.sertakanAudio);
 
     try {
       let fileIdToUse = d.googleDocsFileId;

@@ -29,26 +29,27 @@ Dokumen ini adalah ringkasan status implementasi saat ini dan peta jalan pengemb
 ### 4. Database & DevOps
 - [x] **Database ruma_\* Bersih:** Seluruh tabel menggunakan awalan `ruma_*` dari awal migrasi bersih `0000_lovely_black_tom.sql`.
 - [x] **CI/CD GitHub Actions:** Pipeline otomatis ke VPS CloudPanel lewat SSH (cek migrasi, typecheck, build di runner, rsync artefak, reload PM2, health check & auto-rollback).
-
+- [x] **Penyimpanan Audio Cloudflare R2 (Retensi 90 Hari):** Berkas rekaman audio disimpan di Cloudflare R2 (zero disk VPS, zero egress fee, streaming HTTP 206) dengan pembersihan otomatis setelah 90 hari (`docs/panduan-r2-retensi-90-hari.md`).
+- [x] **Salinan Audio ke Google Drive:** Berkas MP3 rekaman rapat dapat disimpan permanen ke Google Drive pengguna di folder `"ruma. Notulen"` bersama notulen resmi.
 ---
 
 ## 🟡 Fase Berikutnya: Ekosistem Google Workspace & SIM-GTK
 
 ### Fase 1: Integrasi Google Docs & Google Drive (`docs/rencana-google-docs.md`)
-- [ ] Tombol **"Ekspor ke Google Docs"** pada notulen rapat yang telah disetujui.
-- [ ] Dokumen otomatis berformat resmi Sekolah Islam Al Akhyar (kop resmi, tabel agenda, tabel keputusan, matriks tugas).
-- [ ] Penyimpanan di folder khusus `"ruma. Notulen"` di Google Drive pengguna.
+- [x] Tombol **"Ekspor ke Google Docs"** pada notulen rapat yang telah disetujui.
+- [x] Dokumen otomatis berformat resmi Sekolah Islam Al Akhyar (kop resmi, tabel agenda, tabel keputusan, matriks tugas).
+- [x] Penyimpanan di folder khusus `"ruma. Notulen"` di Google Drive pengguna.
+- [x] Otomatis bagikan berkas Google Docs & rekaman audio ke peserta rapat via email.
 
 ### Fase 2: Rapat Rekursif / Serial (`docs/rencana-rapat-rekursif-dan-simgtk.md`)
-- [ ] Entitas **"Seri Rapat"** untuk rapat berkala (rapat mingguan pimpinan, bulanan guru, dsb.).
-- [ ] Notulen rapat lanjutan otomatis menyambung di berkas Google Docs yang sama (halaman baru / bab baru per tanggal pertemuan).
-- [ ] Action items dari rapat pekan lalu otomatis dimunculkan sebagai bahan review di rapat pekan ini.
+- [x] Entitas **"Seri Rapat"** untuk rapat berkala (rapat mingguan pimpinan, bulanan guru, dsb.).
+- [x] Notulen rapat lanjutan otomatis menyambung di berkas Google Docs yang sama (halaman baru / bab baru per tanggal pertemuan).
+- [x] Action items dari rapat pekan lalu otomatis dimunculkan sebagai bahan review di rapat pekan ini.
 
 ### Fase 3: Integrasi Agenda SIM-GTK (`docs/konsep-integrasi-agenda-simgtk.md`)
-- [ ] Alur 2 arah: ruma. menarik daftar agenda hari ini (`GET /agenda`), mengisi otomatis judul & peserta.
-- [ ] Kolom `simgtk_agenda_id` di tabel `ruma_sesi`.
-- [ ] Callback dua arah: saat notulen disetujui, ruma. mengirim balik `ruma_sesi_url` dan `google_docs_url` ke SIMGTK agar bisa dibuka langsung dari SIM-GTK.
-### Fase 4: Integrasi Google Meet (`docs/rencana-google-meet.md`)
+- [x] Alur 2 arah: ruma. menarik daftar agenda hari ini (`GET /agenda`), mengisi otomatis judul & peserta.
+- [x] Kolom `simgtk_agenda_id` di tabel `ruma_sesi`.
+- [x] Callback dua arah: saat notulen disetujui, ruma. mengirim balik `ruma_sesi_url` dan `google_docs_url` ke SIMGTK agar bisa dibuka langsung dari SIM-GTK.
 - [ ] Perekam audio tab Google Meet di peramban desktop (`getDisplayMedia`).
 - [ ] Opsi impor berkas transkrip otomatis Google Meet dari Google Drive langsung ke ruma.
 
