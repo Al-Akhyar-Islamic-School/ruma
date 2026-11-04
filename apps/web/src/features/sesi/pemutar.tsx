@@ -161,7 +161,7 @@ export function BilahPemutar() {
       <div className="mx-auto max-w-3xl px-4 pt-1">
         {galat && (
           <p role="alert" className="pt-1 text-center text-xs text-destructive">
-            Audio tidak bisa diputar. Muat ulang halaman, atau coba lagi nanti.
+            Audio tidak bisa diputar. Berkas mungkin telah kedaluwarsa sesuai retensi 90 hari atau terjadi gangguan jaringan.
           </p>
         )}
         <div className="flex items-center gap-2">

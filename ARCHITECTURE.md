@@ -68,6 +68,15 @@ Audio percakapan manusia (*human speech*) tidak membutuhkan kualitas stereo frek
 1. **Layar HP Redup / Sleep**: PWA memanggil `navigator.wakeLock.request('screen')` saat tombol rekam ditekan agar sistem operasi Android/iOS tidak membunuh proses perekaman audio di latar belakang.
 2. **Offline-First Buffering**: Setiap potongan audio 30 detik disimpan terlebih dahulu ke **IndexedDB** lokal peramban sebelum dikirim ke server. Jika internet sekolah terputus di tengah rapat, audio tetap utuh dan otomatis terkirim saat internet kembali aktif.
 
+### 2.3 Penyimpanan Objek: Cloudflare R2 & Google Drive
+1. **Cloudflare R2 (Audio Operasional Aktif - Retensi 90 Hari)**:
+   - Menggantikan penyimpanan lokal VPS untuk mencegah kepenuhan disk SSD server.
+   - S3-compatible, zero egress fee saat streaming pemutaran audio via HTTP Range Request (`Range: bytes=...`).
+   - Menerapkan *Object Lifecycle Rule* 90 hari: audio otomatis dihapus setelah 90 hari, sedangkan dokumen dan transkrip teks tetap permanen.
+2. **Google Drive (Arsip Audio Jangka Panjang)**:
+   - Pengguna dapat memilih untuk menyimpan berkas audio (`playback.mp3`) ke Google Drive di folder `"ruma. Notulen"` bersamaan dengan dokumen notulen resmi.
+   - Disimpan permanen di Google Workspace sekolah tanpa terpengaruh batas retensi 90 hari Cloudflare R2.
+
 ---
 
 ## 3. Pipeline Pemrosesan AI Hybrid

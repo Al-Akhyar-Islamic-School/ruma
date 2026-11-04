@@ -18,7 +18,7 @@ export type DataNotulen = {
 };
 
 /** Mencari atau membuat folder khusus ruma. Notulen di Google Drive pengguna */
-async function pastikanFolderRuma(token: string): Promise<string | null> {
+export async function pastikanFolderRuma(token: string): Promise<string | null> {
   try {
     const q = `mimeType = 'application/vnd.google-apps.folder' and name = '${NAMA_FOLDER_DEFAULT}' and trashed = false`;
     const resList = await fetch(`${DRIVE_BASE}?q=${encodeURIComponent(q)}&spaces=drive&fields=files(id,name)`, {
@@ -64,7 +64,7 @@ async function pindahkanKeFolder(token: string, fileId: string, folderId: string
 }
 
 /** Bagikan berkas Google Docs (role: reader) ke email peserta yang diundang + kirim notifikasi email */
-async function bagikanKePeserta(
+export async function bagikanKePeserta(
   token: string,
   fileId: string,
   emailList: string[],

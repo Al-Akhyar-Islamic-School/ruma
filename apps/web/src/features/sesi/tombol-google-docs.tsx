@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { FileTextIcon, ExternalLinkIcon, Loader2Icon } from "lucide-react";
+import { FileTextIcon, ExternalLinkIcon, Loader2Icon, MusicIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { api, ok, pesanGalat } from "@/lib/api";
@@ -31,20 +31,38 @@ export function TombolGoogleDocs({ uuid }: { uuid: string }) {
   if (isPending || !data) return null;
 
   // Jika sudah diekspor dan ada URL-nya, tampilkan tombol "Buka Google Docs"
-  if (data.googleDocsUrl) {
+  if (data.googleDocsUrl || data.googleDriveAudioUrl) {
     return (
-      <Button
-        variant="outline"
-        size="sm"
-        asChild
-        className="gap-1.5 border-primary/20 text-primary hover:bg-primary/10"
-      >
-        <a href={data.googleDocsUrl} target="_blank" rel="noopener noreferrer">
-          <FileTextIcon className="size-4" />
-          <span>Buka Google Docs</span>
-          <ExternalLinkIcon className="size-3 opacity-60" />
-        </a>
-      </Button>
+      <div className="flex flex-wrap items-center gap-2">
+        {data.googleDocsUrl && (
+          <Button
+            variant="outline"
+            size="sm"
+            asChild
+            className="gap-1.5 border-primary/20 text-primary hover:bg-primary/10"
+          >
+            <a href={data.googleDocsUrl} target="_blank" rel="noopener noreferrer">
+              <FileTextIcon className="size-4" />
+              <span>Buka Google Docs</span>
+              <ExternalLinkIcon className="size-3 opacity-60" />
+            </a>
+          </Button>
+        )}
+        {data.googleDriveAudioUrl && (
+          <Button
+            variant="outline"
+            size="sm"
+            asChild
+            className="gap-1.5 border-primary/20 text-primary hover:bg-primary/10"
+          >
+            <a href={data.googleDriveAudioUrl} target="_blank" rel="noopener noreferrer">
+              <MusicIcon className="size-4" />
+              <span>Audio di Drive</span>
+              <ExternalLinkIcon className="size-3 opacity-60" />
+            </a>
+          </Button>
+        )}
+      </div>
     );
   }
 
