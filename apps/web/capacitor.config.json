@@ -1,0 +1,10 @@
+{
+  "appId": "sch.alakhyar.ruma",
+  "appName": "ruma.",
+  "webDir": "dist",
+  "server": {
+    "hostname": "ruma.alakhyar.sch.id",
+    "androidScheme": "https",
+    "allowMixedContent": false
+  }
+}
