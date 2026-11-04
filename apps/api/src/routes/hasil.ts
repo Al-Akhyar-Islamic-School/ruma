@@ -1,5 +1,3 @@
-import { createReadStream } from "node:fs";
-import { stat } from "node:fs/promises";
 import { Readable } from "node:stream";
 import { zValidator } from "@hono/zod-validator";
 import { and, asc, eq, getTableColumns, or } from "drizzle-orm";
@@ -20,42 +18,6 @@ import { env } from "../env.js";
 const uuidParam = z.object({ uuid: z.uuid() });
 const tugasParam = z.object({ uuid: z.uuid(), id: z.coerce.number().int().positive() });
 
-const RANGE = /^bytes=(\d*)-(\d*)$/;
-
-/** Mengirim berkas dari disk dengan dukungan Range (pemutar audio butuh ini untuk seek dan iOS Safari). */
-async function kirimBerkas(berkas: string, rangeHeader: string | undefined, contentType: string) {
-  let size: number;
-  try {
-    size = (await stat(berkas)).size;
-  } catch {
-    return Response.json({ error: "belum_tersedia" }, { status: 404 });
-  }
-  const dasar = { "content-type": contentType, "accept-ranges": "bytes", "cache-control": "private, no-store" };
-  const stream = (opts?: { start: number; end: number }) =>
-    Readable.toWeb(createReadStream(berkas, opts)) as unknown as ReadableStream;
-
-  if (!rangeHeader) {
-    return new Response(stream(), { headers: { ...dasar, "content-length": String(size) } });
-  }
-  const m = RANGE.exec(rangeHeader);
-  let start = 0;
-  let end = size - 1;
-  if (m && (m[1] || m[2])) {
-    if (m[1] === "") {
-      start = Math.max(size - Number(m[2]), 0); // "bytes=-N": N byte terakhir
-    } else {
-      start = Number(m[1]);
-      if (m[2]) end = Math.min(Number(m[2]), size - 1);
-    }
-  }
-  if (!m || (!m[1] && !m[2]) || start > end || start >= size) {
-    return new Response(null, { status: 416, headers: { "content-range": `bytes */${size}` } });
-  }
-  return new Response(stream({ start, end }), {
-    status: 206,
-    headers: { ...dasar, "content-range": `bytes ${start}-${end}/${size}`, "content-length": String(end - start + 1) },
-  });
-}
 
 /**
  * Hasil pemrosesan sesi. Dipasang di dalam `sesiRoutes` (sudah di belakang requireAuth).
@@ -152,7 +114,47 @@ export const hasilRoutes = new Hono<AuthEnv>()
     const s = await findReadable(c.var.user, c.req.valid("param").uuid);
     if (!s) return c.json({ error: "not_found" }, 404);
     if (!s.audioPath) return c.json({ error: "belum_tersedia", status: s.status }, 404);
-    return kirimBerkas(audioStorage.localPath(s.audioPath), c.req.header("range"), "audio/mpeg");
+
+    // Cek batas waktu retensi 90 hari (90 * 24 * 3600 * 1000 ms)
+    const usiaMs = Date.now() - s.createdAt.getTime();
+    const RETENSI_90_HARI_MS = 90 * 24 * 3600 * 1000;
+    if (usiaMs > RETENSI_90_HARI_MS) {
+      return c.json(
+        {
+          error: "audio_kedaluwarsa",
+          pesan: "Audio rekaman telah kedaluwarsa sesuai kebijakan retensi 90 hari.",
+        },
+        410
+      );
+    }
+
+    const range = c.req.header("range");
+    const hasilStream = await audioStorage.getStream(s.audioPath, range);
+    if (!hasilStream) {
+      return c.json(
+        {
+          error: "audio_tidak_ditemukan",
+          pesan: "Berkas audio tidak ditemukan di penyimpanan objek atau telah kedaluwarsa.",
+        },
+        410
+      );
+    }
+
+    const headers: Record<string, string> = {
+      "Content-Type": hasilStream.contentType,
+      "Accept-Ranges": "bytes",
+      "Content-Length": String(hasilStream.contentLength),
+      "Cache-Control": "private, max-age=3600",
+    };
+    if (hasilStream.contentRange) {
+      headers["Content-Range"] = hasilStream.contentRange;
+    }
+
+    const webStream = Readable.toWeb(hasilStream.stream) as unknown as ReadableStream;
+    return new Response(webStream, {
+      status: hasilStream.statusCode,
+      headers,
+    });
   })
   // Status integrasi Google Docs untuk sesi ini
   .get("/:uuid/dokumen/google-docs/status", zValidator("param", uuidParam), async (c) => {
