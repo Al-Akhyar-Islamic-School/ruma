@@ -1,17 +1,14 @@
+import { useEffect } from "react";
 import type { QueryClient } from "@tanstack/react-query";
-import { createRootRouteWithContext, Link, Outlet } from "@tanstack/react-router";
+import { createRootRouteWithContext, Link, Outlet, useNavigate, useRouteContext } from "@tanstack/react-router";
 import { ErrorNotice } from "@/components/app/feedback";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { pasangPendengarDeepLink } from "@/lib/auth-app";
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  component: () => (
-    <TooltipProvider>
-      <Outlet />
-      <Toaster position="top-center" />
-    </TooltipProvider>
-  ),
+  component: RootComponent,
   errorComponent: ({ error, reset }) => (
     <div className="mx-auto max-w-md p-6">
       <ErrorNotice error={error} onRetry={reset} title="Terjadi kesalahan" />
@@ -26,3 +23,21 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     </div>
   ),
 });
+
+function RootComponent() {
+  const { queryClient } = useRouteContext({ from: "__root__" });
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    return pasangPendengarDeepLink(queryClient, () => {
+      void navigate({ to: "/" });
+    });
+  }, [queryClient, navigate]);
+
+  return (
+    <TooltipProvider>
+      <Outlet />
+      <Toaster position="top-center" />
+    </TooltipProvider>
+  );
+}

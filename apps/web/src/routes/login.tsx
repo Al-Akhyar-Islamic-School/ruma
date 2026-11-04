@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { API_URL } from "@/lib/api";
 import { meQuery } from "@/lib/auth";
+import { isAppNative, mulaiLoginNative } from "@/lib/auth-app";
 
 // Alasan penolakan dari API: /auth/google/callback -> {APP_URL}/login?error=<kode>
 const ALASAN: Record<string, string> = {
@@ -69,10 +70,16 @@ function Login() {
             <AlertDescription>{ALASAN[error] ?? "Login gagal. Coba lagi."}</AlertDescription>
           </Alert>
         )}
-        <Button asChild size="lg" className="w-full">
-          {/* Navigasi penuh (bukan fetch): alur OAuth berpindah ke accounts.google.com. */}
-          <a href={`${API_URL}/auth/google`}>Masuk dengan akun Google sekolah</a>
-        </Button>
+        {isAppNative() ? (
+          <Button size="lg" className="w-full" onClick={() => void mulaiLoginNative()}>
+            Masuk dengan akun Google sekolah
+          </Button>
+        ) : (
+          <Button asChild size="lg" className="w-full">
+            {/* Navigasi penuh (bukan fetch): alur OAuth berpindah ke accounts.google.com. */}
+            <a href={`${API_URL}/auth/google`}>Masuk dengan akun Google sekolah</a>
+          </Button>
+        )}
         <p className="text-center text-xs text-muted-foreground">Khusus akun Google Workspace Sekolah Islam Al Akhyar.</p>
       </div>
     </main>

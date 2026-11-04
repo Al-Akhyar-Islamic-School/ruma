@@ -60,6 +60,21 @@ export const sessions = mysqlTable(
   },
   (t) => [index("sessions_user_idx").on(t.userId), index("sessions_exp_idx").on(t.expiresAt)],
 );
+export const kodeAplikasi = mysqlTable(
+  "ruma_kode_aplikasi",
+  {
+    id: id(),
+    // SHA-256 hex dari kode sekali-pakai pertukaran sesi aplikasi mobile
+    codeHash: varchar("code_hash", { length: 64 }).notNull().unique(),
+    challenge: varchar("challenge", { length: 128 }).notNull(),
+    userId: ref("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    expiresAt: timestamp("expires_at").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [index("kode_app_exp_idx").on(t.expiresAt)],
+);
 
 /** Metadata awal sesi (PRD FR-02). Rapat: kategori. Supervisi: guru, kelas, mapel, materi. */
 export type SesiMetadata = {

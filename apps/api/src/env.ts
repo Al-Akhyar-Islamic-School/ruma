@@ -10,6 +10,8 @@ const schema = z.object({
   HOST: z.preprocess((v) => (v === "" ? undefined : v), z.string().trim().min(1).optional()),
   API_URL: z.url(),
   APP_URL: z.url(),
+  // Skema URL deep link untuk aplikasi mobile Android/iOS
+  APP_SCHEME: z.string().default("sch.alakhyar.ruma"),
   // Origin yang diizinkan untuk CORS dan mutasi POST/PUT/DELETE.
   // Bisa diisi beberapa domain dipisah koma (misal: "https://ruma.alakhyar.sch.id,https://simgtk.alakhyar.sch.id").
   // Jika kosong, otomatis memakai APP_URL.
