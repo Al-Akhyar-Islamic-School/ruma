@@ -13,6 +13,7 @@ import { statusDriveUser, urlOAuthDrive } from "../integrasi/google-auth.js";
 import { eksporKeGoogleDocs, type DataNotulen } from "../integrasi/google-docs.js";
 import { daftarPesertaDariUndangan } from "../integrasi/peserta-undangan.js";
 import { kirimNotulenKeSimgtk } from "../integrasi/simgtk-agenda.js";
+import { unggahAudioKeGoogleDrive } from "../integrasi/google-drive-audio.js";
 import { env } from "../env.js";
 
 const uuidParam = z.object({ uuid: z.uuid() });
@@ -167,7 +168,43 @@ export const hasilRoutes = new Hono<AuthEnv>()
       driveTersambung,
       urlAuth: driveTersambung ? null : urlOAuthDrive(`sesi_${s.uuid}`),
       googleDocsUrl: d?.googleDocsUrl ?? null,
+      googleDriveAudioUrl: d?.googleDriveAudioUrl ?? null,
     });
+  })
+  // Ekspor rekaman audio ke folder ruma. Notulen di Google Drive
+  .post("/:uuid/audio/drive/ekspor", zValidator("param", uuidParam), async (c) => {
+    const user = c.var.user;
+    const s = await findOwn(user, c.req.valid("param").uuid);
+    if (!s) return c.json({ error: "not_found" }, 404);
+    if (!s.audioPath) return c.json({ error: "audio_belum_siap" }, 400);
+
+    const [d] = await db.select().from(dokumen).where(eq(dokumen.sesiId, s.id)).limit(1);
+    const tanggal = s.createdAt.toISOString().slice(0, 10);
+    const pesertaUndangan = await daftarPesertaDariUndangan(s.id);
+
+    try {
+      const hasil = await unggahAudioKeGoogleDrive(
+        user.id,
+        s,
+        s.judul,
+        tanggal,
+        pesertaUndangan
+      );
+
+      if (d) {
+        await db
+          .update(dokumen)
+          .set({
+            googleDriveAudioFileId: hasil.fileId,
+            googleDriveAudioUrl: hasil.url,
+          })
+          .where(eq(dokumen.id, d.id));
+      }
+
+      return c.json({ ok: true, fileId: hasil.fileId, url: hasil.url });
+    } catch (e) {
+      return c.json({ error: (e as Error).message }, 500);
+    }
   })
   // Ekspor notulen yang disetujui ke Google Docs
   .post("/:uuid/dokumen/google-docs/ekspor", zValidator("param", uuidParam), async (c) => {
@@ -178,6 +215,8 @@ export const hasilRoutes = new Hono<AuthEnv>()
     if (!d || d.statusVerifikasi !== "disetujui") {
       return c.json({ error: "dokumen_belum_disetujui" }, 400);
     }
+    const body = await c.req.json().catch(() => ({} as Record<string, unknown>));
+    const sertakanAudio = Boolean(body?.sertakanAudio);
 
     try {
       let fileIdToUse = d.googleDocsFileId;
@@ -206,14 +245,35 @@ export const hasilRoutes = new Hono<AuthEnv>()
         { isAppend, namaSeri }
       );
 
+      let audioRes: { fileId: string; url: string } | null = null;
+      if (sertakanAudio && s.audioPath) {
+        try {
+          const tanggal = s.createdAt.toISOString().slice(0, 10);
+          audioRes = await unggahAudioKeGoogleDrive(
+            user.id,
+            s,
+            s.judul,
+            tanggal,
+            pesertaUndangan
+          );
+        } catch (errAudio) {
+          console.error("Gagal otomatis unggah audio ke Drive saat ekspor docs:", errAudio);
+        }
+      }
+
       await db
         .update(dokumen)
         .set({
           googleDocsFileId: hasil.fileId,
           googleDocsUrl: hasil.url,
+          ...(audioRes
+            ? {
+                googleDriveAudioFileId: audioRes.fileId,
+                googleDriveAudioUrl: audioRes.url,
+              }
+            : {}),
         })
         .where(eq(dokumen.id, d.id));
-
       // Jika bagian dari seri, simpan juga berkas ini sebagai dokumen induk seri rapat
       if (s.seriId) {
         await db
@@ -290,7 +350,11 @@ export const hasilRoutes = new Hono<AuthEnv>()
       }
 
 
-      return c.json({ ok: true, url: hasil.url });
+      return c.json({
+        ok: true,
+        url: hasil.url,
+        audioUrl: audioRes?.url ?? d.googleDriveAudioUrl ?? null,
+      });
     } catch (e) {
       return c.json({ error: (e as Error).message }, 500);
     }
